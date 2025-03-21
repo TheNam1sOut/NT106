@@ -1,0 +1,13 @@
+F:\winform\UNOGameInterface\UNOGameInterface\bin\Debug\UNOGameInterface.exe.config
+F:\winform\UNOGameInterface\UNOGameInterface\bin\Debug\UNOGameInterface.exe
+F:\winform\UNOGameInterface\UNOGameInterface\bin\Debug\UNOGameInterface.pdb
+F:\winform\UNOGameInterface\UNOGameInterface\bin\Debug\aa\UNOGameInterface.resources.dll
+F:\winform\UNOGameInterface\UNOGameInterface\obj\Debug\UNOGameInterface.csproj.AssemblyReference.cache
+F:\winform\UNOGameInterface\UNOGameInterface\obj\Debug\UNOGameInterface.Form1.resources
+F:\winform\UNOGameInterface\UNOGameInterface\obj\Debug\UNOGameInterface.Properties.Resources.resources
+F:\winform\UNOGameInterface\UNOGameInterface\obj\Debug\UNOGameInterface.Form1.aa.resources
+F:\winform\UNOGameInterface\UNOGameInterface\obj\Debug\UNOGameInterface.csproj.GenerateResource.cache
+F:\winform\UNOGameInterface\UNOGameInterface\obj\Debug\UNOGameInterface.csproj.CoreCompileInputs.cache
+F:\winform\UNOGameInterface\UNOGameInterface\obj\Debug\aa\UNOGameInterface.resources.dll
+F:\winform\UNOGameInterface\UNOGameInterface\obj\Debug\UNOGameInterface.exe
+F:\winform\UNOGameInterface\UNOGameInterface\obj\Debug\UNOGameInterface.pdb
