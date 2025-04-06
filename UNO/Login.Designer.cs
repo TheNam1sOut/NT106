@@ -80,8 +80,6 @@
             // 
             // Login
             // 
-            AutoScaleDimensions = new SizeF(8F, 20F);
-            AutoScaleMode = AutoScaleMode.Font;
             BackgroundImage = (Image)resources.GetObject("$this.BackgroundImage");
             BackgroundImageLayout = ImageLayout.Zoom;
             ClientSize = new Size(800, 450);
@@ -89,6 +87,7 @@
             Controls.Add(textBox1);
             Controls.Add(userLabel);
             Controls.Add(loginBtn);
+            DoubleBuffered = true;
             Name = "Login";
             Text = "Login";
             ResumeLayout(false);
@@ -100,6 +99,5 @@
         private Button loginBtn;
         private TextBox textBox1;
         private Label label1;
-        private RoundedPanel panel1;
     }
 }
