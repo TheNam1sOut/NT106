@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35825.156
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNO", "UNO.csproj", "{19CC41BD-4EBA-48EF-8F86-89B6A62D1448}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNOArena", "..\UNOGameInterface\UNOGameInterface\UNOArena.csproj", "{CFFA4840-61B4-4764-BD85-4F3CC9BD1033}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNOArena", "UNOGameInterface\UNOArena.csproj", "{CFFA4840-61B4-4764-BD85-4F3CC9BD1033}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,10 +11,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{19CC41BD-4EBA-48EF-8F86-89B6A62D1448}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{19CC41BD-4EBA-48EF-8F86-89B6A62D1448}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{19CC41BD-4EBA-48EF-8F86-89B6A62D1448}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{19CC41BD-4EBA-48EF-8F86-89B6A62D1448}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CFFA4840-61B4-4764-BD85-4F3CC9BD1033}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CFFA4840-61B4-4764-BD85-4F3CC9BD1033}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFFA4840-61B4-4764-BD85-4F3CC9BD1033}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -26,6 +20,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {C230A1FB-F212-4BAE-BD25-ECA66A1407AB}
+		SolutionGuid = {C7E07E8A-1FAE-480B-8D90-2CE9C208B585}
 	EndGlobalSection
 EndGlobal
