@@ -8,7 +8,6 @@ using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using UNOGameInterface.Properties;
 using System.Drawing.Imaging;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -31,7 +30,7 @@ namespace UNO
             InitializeComponent();
             InitializeCustomComponents();
             InitializeEmojiPanel();
-            originalImageCard = new Bitmap("F:\\winform\\UNOGameInterface\\UNOGameInterface\\Resources\\pngtree-uno-card-png-image_9101654.png");
+            originalImageCard = new Bitmap(Properties.Resources.pngtree_uno_card_png_image_9101654);
 
 
             blinkTimer = new Timer();
@@ -78,7 +77,7 @@ namespace UNO
             Enemy.Image = Properties.Resources.avatar_removebg_preview;
             Enemy.BackColor = Color.Transparent;
             Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
-            setting.Image = Properties.Resources.settings_glyph_black_icon_png_292947_removebg_preview;
+            setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
             setting.BackColor = Color.Transparent;
             setting.SizeMode = PictureBoxSizeMode.StretchImage;
             setting.Cursor = Cursors.Hand;

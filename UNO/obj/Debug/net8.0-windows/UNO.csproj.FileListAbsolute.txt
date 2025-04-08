@@ -27,11 +27,6 @@ F:\Project_NT106\NT106\UNO\bin\Debug\net8.0-windows\UNO.deps.json
 F:\Project_NT106\NT106\UNO\bin\Debug\net8.0-windows\UNO.runtimeconfig.json
 F:\Project_NT106\NT106\UNO\bin\Debug\net8.0-windows\UNO.dll
 F:\Project_NT106\NT106\UNO\bin\Debug\net8.0-windows\UNO.pdb
-F:\Project_NT106\NT106\UNO\bin\Debug\net8.0-windows\UNOGameInterface.exe
-F:\Project_NT106\NT106\UNO\bin\Debug\net8.0-windows\UNOGameInterface.pdb
-F:\Project_NT106\NT106\UNO\bin\Debug\net8.0-windows\UNOGameInterface.exe.config
-F:\Project_NT106\NT106\UNO\bin\Debug\net8.0-windows\aa\UNOGameInterface.resources.dll
-F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.csproj.AssemblyReference.cache
 F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.Arena.resources
 F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.Login.resources
 F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.Menu.resources
@@ -42,7 +37,6 @@ F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.AssemblyInfoInputs.cache
 F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.AssemblyInfo.cs
 F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.csproj.CoreCompileInputs.cache
 F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.sourcelink.json
-F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.csproj.Up2Date
 F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.dll
 F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\refint\UNO.dll
 F:\Project_NT106\NT106\UNO\obj\Debug\net8.0-windows\UNO.pdb
