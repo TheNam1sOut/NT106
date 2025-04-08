@@ -1,14 +1,14 @@
 {
   "format": 1,
   "restore": {
-    "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNO\\UNO.csproj": {}
+    "F:\\Project_NT106\\NT106\\UNO\\UNO.csproj": {}
   },
   "projects": {
-    "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj": {
+    "F:\\Project_NT106\\NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj": {
       "restore": {
-        "projectUniqueName": "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj",
+        "projectUniqueName": "F:\\Project_NT106\\NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj",
         "projectName": "UNOArena",
-        "projectPath": "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj",
+        "projectPath": "F:\\Project_NT106\\NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj",
         "UsingMicrosoftNETSdk": false,
         "frameworks": {
           "net472": {
@@ -20,20 +20,20 @@
         "net472": {}
       }
     },
-    "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNO\\UNO.csproj": {
+    "F:\\Project_NT106\\NT106\\UNO\\UNO.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNO\\UNO.csproj",
+        "projectUniqueName": "F:\\Project_NT106\\NT106\\UNO\\UNO.csproj",
         "projectName": "UNO",
-        "projectPath": "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNO\\UNO.csproj",
-        "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
-        "outputPath": "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNO\\obj\\",
+        "projectPath": "F:\\Project_NT106\\NT106\\UNO\\UNO.csproj",
+        "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
+        "outputPath": "F:\\Project_NT106\\NT106\\UNO\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\ADMIN\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -48,8 +48,8 @@
           "net8.0-windows7.0": {
             "targetAlias": "net8.0-windows",
             "projectReferences": {
-              "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj": {
-                "projectPath": "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj"
+              "F:\\Project_NT106\\NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj": {
+                "projectPath": "F:\\Project_NT106\\NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj"
               }
             }
           }
