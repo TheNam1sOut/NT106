@@ -7,34 +7,14 @@
   "targets": {
     ".NETCoreApp,Version=v8.0": {
       "UNO/1.0.0": {
-        "dependencies": {
-          "UNOArena": "1.0.0"
-        },
         "runtime": {
           "UNO.dll": {}
-        }
-      },
-      "UNOArena/1.0.0": {
-        "runtime": {
-          "UNOGameInterface.exe": {
-            "fileVersion": "0.0.0.0"
-          }
-        },
-        "resources": {
-          "aa/UNOGameInterface.resources.dll": {
-            "locale": "aa"
-          }
         }
       }
     }
   },
   "libraries": {
     "UNO/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
-    },
-    "UNOArena/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

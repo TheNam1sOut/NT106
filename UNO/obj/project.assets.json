@@ -1,48 +1,30 @@
 {
   "version": 3,
   "targets": {
-    "net8.0-windows7.0": {
-      "UNOArena/1.0.0": {
-        "type": "project",
-        "compile": {
-          "bin/placeholder/UNOArena.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/UNOArena.dll": {}
-        }
-      }
-    }
+    "net8.0-windows7.0": {}
   },
-  "libraries": {
-    "UNOArena/1.0.0": {
-      "type": "project",
-      "path": "../UNOGameInterface/UNOGameInterface/UNOArena.csproj",
-      "msbuildProject": "../UNOGameInterface/UNOGameInterface/UNOArena.csproj"
-    }
-  },
+  "libraries": {},
   "projectFileDependencyGroups": {
-    "net8.0-windows7.0": [
-      "UNOArena >= 1.0.0"
-    ]
+    "net8.0-windows7.0": []
   },
   "packageFolders": {
-    "C:\\Users\\admin\\.nuget\\packages\\": {},
+    "C:\\Users\\PC\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "F:\\Project_NT106\\NT106\\UNO\\UNO.csproj",
+      "projectUniqueName": "E:\\nam2\\ky2\\LTMCB\\UNO\\NT106\\UNO\\UNO.csproj",
       "projectName": "UNO",
-      "projectPath": "F:\\Project_NT106\\NT106\\UNO\\UNO.csproj",
-      "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
-      "outputPath": "F:\\Project_NT106\\NT106\\UNO\\obj\\",
+      "projectPath": "E:\\nam2\\ky2\\LTMCB\\UNO\\NT106\\UNO\\UNO.csproj",
+      "packagesPath": "C:\\Users\\PC\\.nuget\\packages\\",
+      "outputPath": "E:\\nam2\\ky2\\LTMCB\\UNO\\NT106\\UNO\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\PC\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -51,16 +33,13 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
-          "projectReferences": {
-            "F:\\Project_NT106\\NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj": {
-              "projectPath": "F:\\Project_NT106\\NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj"
-            }
-          }
+          "projectReferences": {}
         }
       },
       "warningProperties": {
@@ -97,7 +76,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.201/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

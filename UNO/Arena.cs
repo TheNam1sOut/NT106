@@ -226,9 +226,26 @@ namespace UNO
         private void PictureBox_MouseLeave(object sender, EventArgs e) => drawCard.Image = originalImageCard;
         private void PictureBox_MouseDown(object sender, MouseEventArgs e) => ApplyClickEffect();
         private void PictureBox_MouseUp(object sender, MouseEventArgs e) => drawCard.Image = originalImageCard;
+        private System.Windows.Forms.Timer aTimer;
+        private int counter = 10; // Giá trị khởi tạo
         private void drawCard_Click(object sender, EventArgs e)
         {
+            // Dừng và hủy timer cũ nếu đang chạy
+            if (aTimer != null)
+            {
+                aTimer.Stop();
+                aTimer.Dispose();
+            }
 
+            // Reset giá trị đếm
+            counter = 10;
+            label1.Text = counter.ToString();
+
+            // Tạo timer mới
+            aTimer = new System.Windows.Forms.Timer();
+            aTimer.Tick += aTimer_Tick;
+            aTimer.Interval = 1000;
+            aTimer.Start();
         }
         private void Form1_Resize(object sender, EventArgs e)
         {
@@ -304,5 +321,22 @@ namespace UNO
         {
 
         }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+        }
+        private void aTimer_Tick(object sender, EventArgs e)
+        {
+            counter--;
+
+            if (counter == 0)
+            {
+                aTimer.Stop();
+                aTimer.Dispose();
+            }
+
+            label1.Text = counter.ToString();
+        }
+    
     }
 }

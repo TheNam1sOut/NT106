@@ -35,6 +35,7 @@
             imojiButon = new PictureBox();
             ClockIcon = new PictureBox();
             clock1 = new PictureBox();
+            label1 = new Label();
             ((System.ComponentModel.ISupportInitialize)drawCard).BeginInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).BeginInit();
@@ -48,9 +49,10 @@
             // 
             drawCard.BackColor = Color.Transparent;
             drawCard.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            drawCard.Location = new Point(374, 183);
+            drawCard.Location = new Point(327, 137);
+            drawCard.Margin = new Padding(3, 2, 3, 2);
             drawCard.Name = "drawCard";
-            drawCard.Size = new Size(120, 121);
+            drawCard.Size = new Size(105, 91);
             drawCard.SizeMode = PictureBoxSizeMode.StretchImage;
             drawCard.TabIndex = 0;
             drawCard.TabStop = false;
@@ -60,9 +62,10 @@
             // 
             AvatarPlayer.BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             AvatarPlayer.Image = Properties.Resources.avatar_removebg_preview;
-            AvatarPlayer.Location = new Point(71, 419);
+            AvatarPlayer.Location = new Point(62, 314);
+            AvatarPlayer.Margin = new Padding(3, 2, 3, 2);
             AvatarPlayer.Name = "AvatarPlayer";
-            AvatarPlayer.Size = new Size(80, 80);
+            AvatarPlayer.Size = new Size(70, 60);
             AvatarPlayer.SizeMode = PictureBoxSizeMode.StretchImage;
             AvatarPlayer.TabIndex = 1;
             AvatarPlayer.TabStop = false;
@@ -72,9 +75,10 @@
             // 
             Enemy.BackColor = Color.Transparent;
             Enemy.Image = Properties.Resources.avatar_removebg_preview;
-            Enemy.Location = new Point(729, 3);
+            Enemy.Location = new Point(638, 2);
+            Enemy.Margin = new Padding(3, 2, 3, 2);
             Enemy.Name = "Enemy";
-            Enemy.Size = new Size(80, 80);
+            Enemy.Size = new Size(70, 60);
             Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
             Enemy.TabIndex = 2;
             Enemy.TabStop = false;
@@ -84,9 +88,10 @@
             // 
             setting.BackColor = Color.Transparent;
             setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
-            setting.Location = new Point(9, 12);
+            setting.Location = new Point(8, 9);
+            setting.Margin = new Padding(3, 2, 3, 2);
             setting.Name = "setting";
-            setting.Size = new Size(47, 47);
+            setting.Size = new Size(41, 35);
             setting.SizeMode = PictureBoxSizeMode.Zoom;
             setting.TabIndex = 3;
             setting.TabStop = false;
@@ -96,9 +101,10 @@
             // 
             imojiButon.BackColor = Color.Transparent;
             imojiButon.Image = Properties.Resources._19822c18e912ad0ffb2ad2faed8a61af__1__removebg_preview1;
-            imojiButon.Location = new Point(9, 440);
+            imojiButon.Location = new Point(8, 330);
+            imojiButon.Margin = new Padding(3, 2, 3, 2);
             imojiButon.Name = "imojiButon";
-            imojiButon.Size = new Size(56, 50);
+            imojiButon.Size = new Size(49, 38);
             imojiButon.SizeMode = PictureBoxSizeMode.StretchImage;
             imojiButon.TabIndex = 4;
             imojiButon.TabStop = false;
@@ -108,9 +114,10 @@
             // 
             ClockIcon.BackColor = Color.Transparent;
             ClockIcon.Image = Properties.Resources.clock_removebg_preview;
-            ClockIcon.Location = new Point(729, 440);
+            ClockIcon.Location = new Point(638, 330);
+            ClockIcon.Margin = new Padding(3, 2, 3, 2);
             ClockIcon.Name = "ClockIcon";
-            ClockIcon.Size = new Size(66, 59);
+            ClockIcon.Size = new Size(58, 44);
             ClockIcon.SizeMode = PictureBoxSizeMode.StretchImage;
             ClockIcon.TabIndex = 5;
             ClockIcon.TabStop = false;
@@ -119,20 +126,34 @@
             // 
             clock1.BackColor = Color.Transparent;
             clock1.Image = Properties.Resources.clock_removebg_preview;
-            clock1.Location = new Point(77, 3);
+            clock1.Location = new Point(67, 2);
+            clock1.Margin = new Padding(3, 2, 3, 2);
             clock1.Name = "clock1";
-            clock1.Size = new Size(66, 59);
+            clock1.Size = new Size(58, 44);
             clock1.SizeMode = PictureBoxSizeMode.StretchImage;
             clock1.TabIndex = 6;
             clock1.TabStop = false;
             // 
+            // label1
+            // 
+            label1.BackColor = Color.Transparent;
+            label1.Font = new Font("Segoe UI", 21.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            label1.Location = new Point(702, 330);
+            label1.Name = "label1";
+            label1.Size = new Size(52, 44);
+            label1.TabIndex = 7;
+            label1.Text = "10";
+            label1.TextAlign = ContentAlignment.MiddleCenter;
+            label1.Click += label1_Click;
+            // 
             // Arena
             // 
-            AutoScaleDimensions = new SizeF(8F, 20F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
-            ClientSize = new Size(876, 511);
+            ClientSize = new Size(766, 383);
+            Controls.Add(label1);
             Controls.Add(clock1);
             Controls.Add(ClockIcon);
             Controls.Add(imojiButon);
@@ -140,6 +161,7 @@
             Controls.Add(Enemy);
             Controls.Add(AvatarPlayer);
             Controls.Add(drawCard);
+            Margin = new Padding(3, 2, 3, 2);
             Name = "Arena";
             Text = "Arena";
             Load += Arena_Load;
@@ -162,5 +184,6 @@
         private PictureBox imojiButon;
         private PictureBox ClockIcon;
         private PictureBox clock1;
+        private Label label1;
     }
 }
