@@ -1,6 +1,10 @@
 {
   "version": 2,
+<<<<<<< HEAD
   "dgSpecHash": "kdwzSYbvgI4=",
+=======
+  "dgSpecHash": "BFNXW3UBfEI=",
+>>>>>>> 9c82e19cac912de527670f5cd5dba8247a71185f
   "success": true,
   "projectFilePath": "E:\\nam2\\ky2\\LTMCB\\UNO\\NT106\\UNO\\UNO.csproj",
   "expectedPackageFiles": [],

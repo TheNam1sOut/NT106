@@ -88,6 +88,7 @@
             Controls.Add(userLabel);
             Controls.Add(loginBtn);
             DoubleBuffered = true;
+            FormBorderStyle = FormBorderStyle.Fixed3D;
             Name = "Login";
             Text = "Login";
             ResumeLayout(false);

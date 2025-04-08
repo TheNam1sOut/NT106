@@ -97,7 +97,11 @@
             Controls.Add(button3);
             Controls.Add(button2);
             Controls.Add(button1);
+<<<<<<< HEAD
             Margin = new Padding(3, 2, 3, 2);
+=======
+            FormBorderStyle = FormBorderStyle.Fixed3D;
+>>>>>>> 9c82e19cac912de527670f5cd5dba8247a71185f
             Name = "Menu";
             Text = "UNO";
             ResumeLayout(false);
