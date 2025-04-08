@@ -1,29 +1,11 @@
 {
   "version": 3,
   "targets": {
-    "net8.0-windows7.0": {
-      "UNOArena/1.0.0": {
-        "type": "project",
-        "compile": {
-          "bin/placeholder/UNOArena.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/UNOArena.dll": {}
-        }
-      }
-    }
+    "net8.0-windows7.0": {}
   },
-  "libraries": {
-    "UNOArena/1.0.0": {
-      "type": "project",
-      "path": "../UNOGameInterface/UNOGameInterface/UNOArena.csproj",
-      "msbuildProject": "../UNOGameInterface/UNOGameInterface/UNOArena.csproj"
-    }
-  },
+  "libraries": {},
   "projectFileDependencyGroups": {
-    "net8.0-windows7.0": [
-      "UNOArena >= 1.0.0"
-    ]
+    "net8.0-windows7.0": []
   },
   "packageFolders": {
     "C:\\Users\\admin\\.nuget\\packages\\": {},
@@ -56,11 +38,7 @@
       "frameworks": {
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
-          "projectReferences": {
-            "F:\\Project_NT106\\NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj": {
-              "projectPath": "F:\\Project_NT106\\NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj"
-            }
-          }
+          "projectReferences": {}
         }
       },
       "warningProperties": {

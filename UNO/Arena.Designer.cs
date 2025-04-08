@@ -140,6 +140,8 @@
             Controls.Add(Enemy);
             Controls.Add(AvatarPlayer);
             Controls.Add(drawCard);
+            FormBorderStyle = FormBorderStyle.Fixed3D;
+            MaximizeBox = false;
             Name = "Arena";
             Text = "Arena";
             Load += Arena_Load;

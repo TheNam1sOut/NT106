@@ -94,6 +94,7 @@
             Controls.Add(button3);
             Controls.Add(button2);
             Controls.Add(button1);
+            FormBorderStyle = FormBorderStyle.Fixed3D;
             Name = "Menu";
             Text = "UNO";
             ResumeLayout(false);
