@@ -26,23 +26,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\admin\\.nuget\\packages\\": {},
+    "C:\\Users\\ADMIN\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "F:\\Project_NT106\\UNO\\UNO.csproj",
+      "projectUniqueName": "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNO\\UNO.csproj",
       "projectName": "UNO",
-      "projectPath": "F:\\Project_NT106\\UNO\\UNO.csproj",
-      "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
-      "outputPath": "F:\\Project_NT106\\UNO\\obj\\",
+      "projectPath": "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNO\\UNO.csproj",
+      "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
+      "outputPath": "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNO\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\ADMIN\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -57,8 +57,8 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "projectReferences": {
-            "F:\\Project_NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj": {
-              "projectPath": "F:\\Project_NT106\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj"
+            "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj": {
+              "projectPath": "G:\\PC\\Coding\\VS_repo\\UNO_git\\UNOGameInterface\\UNOGameInterface\\UNOArena.csproj"
             }
           }
         }
