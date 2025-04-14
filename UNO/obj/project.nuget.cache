@@ -1,12 +1,15 @@
 {
   "version": 2,
-<<<<<<< HEAD
-  "dgSpecHash": "kdwzSYbvgI4=",
-=======
-  "dgSpecHash": "BFNXW3UBfEI=",
->>>>>>> 9c82e19cac912de527670f5cd5dba8247a71185f
+  "dgSpecHash": "9v2EeDBDYrc=",
   "success": true,
-  "projectFilePath": "E:\\nam2\\ky2\\LTMCB\\UNO\\NT106\\UNO\\UNO.csproj",
+  "projectFilePath": "G:\\PC\\Coding\\VS_repo\\UNOv2\\UNO\\UNO.csproj",
   "expectedPackageFiles": [],
-  "logs": []
+  "logs": [
+    {
+      "code": "Undefined",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Problem reading the cache file G:\\PC\\Coding\\VS_repo\\UNOv2\\UNO\\obj\\project.nuget.cache : Invalid property identifier character: <. Path 'version', line 3, position 0."
+    }
+  ]
 }

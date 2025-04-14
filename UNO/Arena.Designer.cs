@@ -161,12 +161,9 @@
             Controls.Add(Enemy);
             Controls.Add(AvatarPlayer);
             Controls.Add(drawCard);
-<<<<<<< HEAD
             Margin = new Padding(3, 2, 3, 2);
-=======
             FormBorderStyle = FormBorderStyle.Fixed3D;
             MaximizeBox = false;
->>>>>>> 9c82e19cac912de527670f5cd5dba8247a71185f
             Name = "Arena";
             Text = "Arena";
             Load += Arena_Load;

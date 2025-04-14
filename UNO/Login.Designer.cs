@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Login));
             userLabel = new Label();
             loginBtn = new Button();
             textBox1 = new TextBox();
@@ -80,7 +79,7 @@
             // 
             // Login
             // 
-            BackgroundImage = (Image)resources.GetObject("$this.BackgroundImage");
+            BackgroundImage = Properties.Resources.Login_Screen;
             BackgroundImageLayout = ImageLayout.Zoom;
             ClientSize = new Size(800, 450);
             Controls.Add(label1);

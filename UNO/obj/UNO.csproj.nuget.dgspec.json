@@ -1,27 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "E:\\nam2\\ky2\\LTMCB\\UNO\\NT106\\UNO\\UNO.csproj": {}
+    "G:\\PC\\Coding\\VS_repo\\UNOv2\\UNO\\UNO.csproj": {}
   },
   "projects": {
-<<<<<<< HEAD
-    "E:\\nam2\\ky2\\LTMCB\\UNO\\NT106\\UNO\\UNO.csproj": {
-=======
-    "F:\\Project_NT106\\NT106\\UNO\\UNO.csproj": {
->>>>>>> 9c82e19cac912de527670f5cd5dba8247a71185f
+    "G:\\PC\\Coding\\VS_repo\\UNOv2\\UNO\\UNO.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\nam2\\ky2\\LTMCB\\UNO\\NT106\\UNO\\UNO.csproj",
+        "projectUniqueName": "G:\\PC\\Coding\\VS_repo\\UNOv2\\UNO\\UNO.csproj",
         "projectName": "UNO",
-        "projectPath": "E:\\nam2\\ky2\\LTMCB\\UNO\\NT106\\UNO\\UNO.csproj",
-        "packagesPath": "C:\\Users\\PC\\.nuget\\packages\\",
-        "outputPath": "E:\\nam2\\ky2\\LTMCB\\UNO\\NT106\\UNO\\obj\\",
+        "projectPath": "G:\\PC\\Coding\\VS_repo\\UNOv2\\UNO\\UNO.csproj",
+        "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
+        "outputPath": "G:\\PC\\Coding\\VS_repo\\UNOv2\\UNO\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\PC\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\ADMIN\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -30,7 +26,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -73,7 +68,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
