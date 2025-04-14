@@ -25,6 +25,80 @@ namespace UNO
         private TableLayoutPanel emojiTable;
         private int columns = 3;
         private int rows = 3;
+
+        /* Một map lưu tất cả hình ảnh lá bài và key để truy xuất các phần tử đó
+         * Quy ước về tên lá bài:
+         * R, G, B, Y: Màu lá bài, lần lượt là đỏ, xanh lá cây, xanh biển, vàng
+         * 0 - 9: Cho các lá số (VD: R9, G8, B7, Y6)
+         * C: Lá skip (VD: RC, GC, BC, YC)
+         * D: Lá đảo lượt (VD: RD, GD, BD, YD)
+         * P: Lá +2 (VD: RP, GP, BP, YP)
+         * DD: Lá chọn màu
+         * DP: Lá +4
+         */
+        private Dictionary<string, Image> imageCards = new Dictionary<string, Image>();
+
+        //Lưu toàn bộ lá bài vào trong Dictionary/map với key là tên file (đã theo quy ước)
+        private void LoadCards()
+        {
+            // đường dẫn chứa file thực thi là G:\PC\Coding\VS_repo\UNOv2\UNO\bin\Debug\net8.0-windows
+            // đường dẫn cần xử lí là G:\PC\Coding\VS_repo\UNOv2\UNO\Resources\Cards
+            // => cần xử lí cardsDirectory như trên để quay lại thư mục UNO
+            string cardsDirectory = "..\\..\\..\\Resources\\Cards";
+            string[] cardsName = System.IO.Directory.GetFiles(cardsDirectory);
+
+            foreach (string cardName in cardsName)
+            {
+                string fileCardName = System.IO.Path.GetFileNameWithoutExtension(cardName);
+                imageCards[fileCardName] = Image.FromFile(cardName);
+            }
+        }
+
+        //Update lá bài nằm ở giữa
+        private void DisplayCard(string cardName)
+        {
+
+        }
+
+        //Update danh sách lá bài, với việc thay đổi từng lá bài nằm ở hàm này
+        //Tham số thứ hai chỉ ra picturebox nào sẽ bị thay đối
+        private void DisplayCard(string cardName, PictureBox pictureBox)
+        {
+
+        }
+
+        //Như tên hàm, xuất ra sáu lá bài đầu tiên, chủ yếu dùng khi mà người dùng mới vào trận
+        private void DisplayFirstSixCards()
+        {
+
+        }
+
+        /* Ba hàm dưới đây sử dụng biến firstIndex để hiển thị 6 lá bài từ danh sách lá bài của người dùng
+        
+        //Xử lí khi người dùng bấm nút next
+        // private void nextBtn_Click(object sender, EventArgs e) {}
+
+        //Xử lí khi người dùng bấm nút back
+        // private void nextBtn_Click(object sender, EventArgs e) {}
+
+        //Hàm xử lí hiển thị lại các lá bài khi nhấn vào hai nút back/next 
+        // private void UpdateSixCards() {}
+
+        */
+
+        //Hàm kiểm tra tính hợp lệ của lá bài khi nhấn vào, nếu hợp lệ thì khi nhấn lần nữa sẽ chơi lá đó
+        //private void pictureBox_Click(object sender, EventArgs e) {}
+
+        /*
+         // Xử lí khi nhấn nút Draw
+         // private void drawBtn_Click(object sender, EventArgs e) {}
+         
+         // Hàm xử lí yêu cầu rút thêm lá khi người dùng nhấn nút Draw
+         // private DrawCards(int count) {} nếu xử lí được +2 +4 tự động thì không cần tham số count
+         */
+
+        //Hàm sắp xếp lại danh sách bài người chơi
+        // private void sortBtn_Click(object sender, EventArgs e) {}
         public Arena()
         {
             InitializeComponent();
