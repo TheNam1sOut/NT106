@@ -79,7 +79,7 @@
             // 
             // Login
             // 
-            BackgroundImage = Properties.Resources.Login_Screen;
+            BackgroundImage = Properties.Resources.login;
             BackgroundImageLayout = ImageLayout.Zoom;
             ClientSize = new Size(800, 450);
             Controls.Add(label1);
