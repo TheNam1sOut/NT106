@@ -1,2 +1,94 @@
+# Ignore build output directories
+/bin/
+/obj/
+# Build Folders
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+# Logs
+*.log
+
+# Visual Studio specific
 .vs/
-/.vs
+.vscode/
+
+# Backup & temporary files
+*.tmp
+*.bak
+*.swp
+*.sln.ide
+*.ncrunchsolution
+*.ncrunchproject
+
+# Package directories
+packages/
+*.nupkg
+*.snupkg
+
+# Generated files
+*.g.*
+*.designer.cs
+*.generated.cs
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Rider
+.idea/
+
+# NuGet
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Other
+*.tlog
+*.idb
+*.pdb
+*.cache
+*.ilk
+*.obj
+*.pch
+*.ipch
+*.aps
+*.ncb
+*.sdf
+*.opensdf
+*.tlog
+*.log
+*.vspscc
+*.vssscc
+*.orig
+*.rej
+*.class
+*.pyc
+*.pyo
+*.env
+.env/
+.env.*
