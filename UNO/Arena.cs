@@ -313,7 +313,7 @@ namespace UNO
 
             // Reset giá trị đếm
             counter = 10;
-            label1.Text = counter.ToString();
+            TimeMe.Text = counter.ToString();
 
             // Tạo timer mới
             aTimer = new System.Windows.Forms.Timer();
@@ -409,7 +409,7 @@ namespace UNO
                 aTimer.Dispose();
             }
 
-            label1.Text = counter.ToString();
+            TimeMe.Text = counter.ToString();
         }
 
         private void button1_Click(object sender, EventArgs e)

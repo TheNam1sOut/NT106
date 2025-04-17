@@ -35,7 +35,7 @@
             imojiButon = new PictureBox();
             ClockIcon = new PictureBox();
             clock1 = new PictureBox();
-            label1 = new Label();
+            TimeMe = new Label();
             button1 = new Button();
             Card1 = new PictureBox();
             Card2 = new PictureBox();
@@ -45,7 +45,8 @@
             PreviousButton = new Button();
             NextButton = new Button();
             SortButton = new Button();
-            pictureBox6 = new PictureBox();
+            Card6 = new PictureBox();
+            TimeEnemy = new Label();
             ((System.ComponentModel.ISupportInitialize)drawCard).BeginInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).BeginInit();
@@ -58,7 +59,7 @@
             ((System.ComponentModel.ISupportInitialize)Card3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Card4).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Card5).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)pictureBox6).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)Card6).BeginInit();
             SuspendLayout();
             // 
             // drawCard
@@ -138,24 +139,24 @@
             // 
             clock1.BackColor = Color.Transparent;
             clock1.Image = Properties.Resources.clock_removebg_preview;
-            clock1.Location = new Point(77, 3);
+            clock1.Location = new Point(62, 3);
             clock1.Name = "clock1";
             clock1.Size = new Size(66, 59);
             clock1.SizeMode = PictureBoxSizeMode.StretchImage;
             clock1.TabIndex = 6;
             clock1.TabStop = false;
             // 
-            // label1
+            // TimeMe
             // 
-            label1.BackColor = Color.Transparent;
-            label1.Font = new Font("Segoe UI", 21.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            label1.Location = new Point(802, 440);
-            label1.Name = "label1";
-            label1.Size = new Size(59, 59);
-            label1.TabIndex = 7;
-            label1.Text = "10";
-            label1.TextAlign = ContentAlignment.MiddleCenter;
-            label1.Click += label1_Click;
+            TimeMe.BackColor = Color.Transparent;
+            TimeMe.Font = new Font("Segoe UI", 21.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            TimeMe.Location = new Point(802, 440);
+            TimeMe.Name = "TimeMe";
+            TimeMe.Size = new Size(59, 59);
+            TimeMe.TabIndex = 7;
+            TimeMe.Text = "10";
+            TimeMe.TextAlign = ContentAlignment.MiddleCenter;
+            TimeMe.Click += label1_Click;
             // 
             // button1
             // 
@@ -254,16 +255,27 @@
             SortButton.Text = "Sort";
             SortButton.UseVisualStyleBackColor = true;
             // 
-            // pictureBox6
+            // Card6
             // 
-            pictureBox6.BackColor = Color.Transparent;
-            pictureBox6.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            pictureBox6.Location = new Point(622, 374);
-            pictureBox6.Name = "pictureBox6";
-            pictureBox6.Size = new Size(88, 118);
-            pictureBox6.SizeMode = PictureBoxSizeMode.Zoom;
-            pictureBox6.TabIndex = 21;
-            pictureBox6.TabStop = false;
+            Card6.BackColor = Color.Transparent;
+            Card6.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
+            Card6.Location = new Point(622, 374);
+            Card6.Name = "Card6";
+            Card6.Size = new Size(88, 118);
+            Card6.SizeMode = PictureBoxSizeMode.Zoom;
+            Card6.TabIndex = 21;
+            Card6.TabStop = false;
+            // 
+            // TimeEnemy
+            // 
+            TimeEnemy.BackColor = Color.Transparent;
+            TimeEnemy.Font = new Font("Segoe UI", 21.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            TimeEnemy.Location = new Point(134, 0);
+            TimeEnemy.Name = "TimeEnemy";
+            TimeEnemy.Size = new Size(59, 59);
+            TimeEnemy.TabIndex = 22;
+            TimeEnemy.Text = "10";
+            TimeEnemy.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // Arena
             // 
@@ -272,7 +284,8 @@
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(875, 511);
-            Controls.Add(pictureBox6);
+            Controls.Add(TimeEnemy);
+            Controls.Add(Card6);
             Controls.Add(SortButton);
             Controls.Add(NextButton);
             Controls.Add(PreviousButton);
@@ -282,7 +295,7 @@
             Controls.Add(Card2);
             Controls.Add(Card1);
             Controls.Add(button1);
-            Controls.Add(label1);
+            Controls.Add(TimeMe);
             Controls.Add(clock1);
             Controls.Add(ClockIcon);
             Controls.Add(imojiButon);
@@ -307,7 +320,7 @@
             ((System.ComponentModel.ISupportInitialize)Card3).EndInit();
             ((System.ComponentModel.ISupportInitialize)Card4).EndInit();
             ((System.ComponentModel.ISupportInitialize)Card5).EndInit();
-            ((System.ComponentModel.ISupportInitialize)pictureBox6).EndInit();
+            ((System.ComponentModel.ISupportInitialize)Card6).EndInit();
             ResumeLayout(false);
         }
 
@@ -320,7 +333,7 @@
         private PictureBox imojiButon;
         private PictureBox ClockIcon;
         private PictureBox clock1;
-        private Label label1;
+        private Label TimeMe;
         private Button button1;
         private PictureBox Card1;
         private PictureBox Card2;
@@ -330,6 +343,7 @@
         private Button PreviousButton;
         private Button NextButton;
         private Button SortButton;
-        private PictureBox pictureBox6;
+        private PictureBox Card6;
+        private Label TimeEnemy;
     }
 }
