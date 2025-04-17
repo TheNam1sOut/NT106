@@ -411,6 +411,15 @@ namespace UNO
 
             label1.Text = counter.ToString();
         }
-    
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Card5_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
