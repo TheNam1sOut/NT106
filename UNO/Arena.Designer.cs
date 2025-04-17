@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            drawCard = new PictureBox();
+            CardPrevious = new PictureBox();
             AvatarPlayer = new PictureBox();
             Enemy = new PictureBox();
             setting = new PictureBox();
@@ -36,7 +36,7 @@
             ClockIcon = new PictureBox();
             clock1 = new PictureBox();
             TimeMe = new Label();
-            button1 = new Button();
+            DrawButton = new Button();
             Card1 = new PictureBox();
             Card2 = new PictureBox();
             Card3 = new PictureBox();
@@ -47,7 +47,7 @@
             SortButton = new Button();
             Card6 = new PictureBox();
             TimeEnemy = new Label();
-            ((System.ComponentModel.ISupportInitialize)drawCard).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)CardPrevious).BeginInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).BeginInit();
             ((System.ComponentModel.ISupportInitialize)setting).BeginInit();
@@ -62,17 +62,17 @@
             ((System.ComponentModel.ISupportInitialize)Card6).BeginInit();
             SuspendLayout();
             // 
-            // drawCard
+            // CardPrevious
             // 
-            drawCard.BackColor = Color.Transparent;
-            drawCard.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            drawCard.Location = new Point(374, 183);
-            drawCard.Name = "drawCard";
-            drawCard.Size = new Size(120, 121);
-            drawCard.SizeMode = PictureBoxSizeMode.StretchImage;
-            drawCard.TabIndex = 0;
-            drawCard.TabStop = false;
-            drawCard.Click += drawCard_Click;
+            CardPrevious.BackColor = Color.Transparent;
+            CardPrevious.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
+            CardPrevious.Location = new Point(374, 183);
+            CardPrevious.Name = "CardPrevious";
+            CardPrevious.Size = new Size(120, 121);
+            CardPrevious.SizeMode = PictureBoxSizeMode.StretchImage;
+            CardPrevious.TabIndex = 0;
+            CardPrevious.TabStop = false;
+            CardPrevious.Click += drawCard_Click;
             // 
             // AvatarPlayer
             // 
@@ -158,20 +158,21 @@
             TimeMe.TextAlign = ContentAlignment.MiddleCenter;
             TimeMe.Click += label1_Click;
             // 
-            // button1
+            // DrawButton
             // 
-            button1.Cursor = Cursors.Hand;
-            button1.Location = new Point(786, 229);
-            button1.Name = "button1";
-            button1.Size = new Size(75, 36);
-            button1.TabIndex = 8;
-            button1.Text = "Draw";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
+            DrawButton.Cursor = Cursors.Hand;
+            DrawButton.Location = new Point(786, 229);
+            DrawButton.Name = "DrawButton";
+            DrawButton.Size = new Size(75, 36);
+            DrawButton.TabIndex = 8;
+            DrawButton.Text = "Draw";
+            DrawButton.UseVisualStyleBackColor = true;
+            DrawButton.Click += button1_Click;
             // 
             // Card1
             // 
             Card1.BackColor = Color.Transparent;
+            Card1.Cursor = Cursors.Hand;
             Card1.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
             Card1.Location = new Point(157, 374);
             Card1.Name = "Card1";
@@ -183,6 +184,7 @@
             // Card2
             // 
             Card2.BackColor = Color.Transparent;
+            Card2.Cursor = Cursors.Hand;
             Card2.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
             Card2.Location = new Point(249, 374);
             Card2.Name = "Card2";
@@ -194,6 +196,7 @@
             // Card3
             // 
             Card3.BackColor = Color.Transparent;
+            Card3.Cursor = Cursors.Hand;
             Card3.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
             Card3.Location = new Point(340, 374);
             Card3.Name = "Card3";
@@ -205,6 +208,7 @@
             // Card4
             // 
             Card4.BackColor = Color.Transparent;
+            Card4.Cursor = Cursors.Hand;
             Card4.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
             Card4.Location = new Point(434, 374);
             Card4.Name = "Card4";
@@ -216,6 +220,7 @@
             // Card5
             // 
             Card5.BackColor = Color.Transparent;
+            Card5.Cursor = Cursors.Hand;
             Card5.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
             Card5.Location = new Point(528, 374);
             Card5.Name = "Card5";
@@ -258,6 +263,7 @@
             // Card6
             // 
             Card6.BackColor = Color.Transparent;
+            Card6.Cursor = Cursors.Hand;
             Card6.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
             Card6.Location = new Point(622, 374);
             Card6.Name = "Card6";
@@ -294,7 +300,7 @@
             Controls.Add(Card3);
             Controls.Add(Card2);
             Controls.Add(Card1);
-            Controls.Add(button1);
+            Controls.Add(DrawButton);
             Controls.Add(TimeMe);
             Controls.Add(clock1);
             Controls.Add(ClockIcon);
@@ -302,13 +308,13 @@
             Controls.Add(setting);
             Controls.Add(Enemy);
             Controls.Add(AvatarPlayer);
-            Controls.Add(drawCard);
+            Controls.Add(CardPrevious);
             FormBorderStyle = FormBorderStyle.Fixed3D;
             MaximizeBox = false;
             Name = "Arena";
             Text = "Arena";
             Load += Arena_Load;
-            ((System.ComponentModel.ISupportInitialize)drawCard).EndInit();
+            ((System.ComponentModel.ISupportInitialize)CardPrevious).EndInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).EndInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).EndInit();
             ((System.ComponentModel.ISupportInitialize)setting).EndInit();
@@ -326,7 +332,7 @@
 
         #endregion
 
-        private PictureBox drawCard;
+        private PictureBox CardPrevious;
         private PictureBox AvatarPlayer;
         private PictureBox Enemy;
         private PictureBox setting;
@@ -334,7 +340,7 @@
         private PictureBox ClockIcon;
         private PictureBox clock1;
         private Label TimeMe;
-        private Button button1;
+        private Button DrawButton;
         private PictureBox Card1;
         private PictureBox Card2;
         private PictureBox Card3;

@@ -110,11 +110,11 @@ namespace UNO
             blinkTimer = new Timer();
             blinkTimer.Interval = 100;
             blinkTimer.Tick += BlinkTimer_Tick;
-            drawCard.Cursor = Cursors.Hand;
-            drawCard.MouseEnter += drawCard_MouseEnter;
-            drawCard.MouseLeave += drawCard_MouseLeave;
-            drawCard.MouseDown += PictureBox_MouseDown;
-            drawCard.MouseUp += PictureBox_MouseUp;
+            CardPrevious.Cursor = Cursors.Hand;
+            CardPrevious.MouseEnter += drawCard_MouseEnter;
+            CardPrevious.MouseLeave += drawCard_MouseLeave;
+            CardPrevious.MouseDown += PictureBox_MouseDown;
+            CardPrevious.MouseUp += PictureBox_MouseUp;
             imojiButon.Cursor = Cursors.Hand;
             imojiButon.Click += pictureBox1_Click;
             imojiButon.MouseEnter += pictureBox1_MouseEnter;
@@ -135,9 +135,9 @@ namespace UNO
         private void InitializeCustomComponents()
         {
             imojiButon.Parent = this;
-            drawCard.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            drawCard.BackColor = Color.Transparent;
-            drawCard.SizeMode = PictureBoxSizeMode.StretchImage;
+            CardPrevious.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
+            CardPrevious.BackColor = Color.Transparent;
+            CardPrevious.SizeMode = PictureBoxSizeMode.StretchImage;
             imojiButon.Image = Properties.Resources._19822c18e912ad0ffb2ad2faed8a61af__1__removebg_preview1;
             imojiButon.BackColor = Color.Transparent;
             imojiButon.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -161,13 +161,13 @@ namespace UNO
         {
             if (isBlinking)
             {
-                drawCard.Image = originalImageCard;
+                CardPrevious.Image = originalImageCard;
                 isBlinking = false;
                 blinkTimer.Stop();
             }
             else
             {
-                drawCard.Image = AdjustBrightness(originalImageCard, 1.5f);
+                CardPrevious.Image = AdjustBrightness(originalImageCard, 1.5f);
                 isBlinking = true;
             }
         }
@@ -201,12 +201,12 @@ namespace UNO
         }
         private void ApplyClickEffect()
         {
-            drawCard.Image = AdjustBrightness(originalImageCard, 0.8f); // Giảm độ sáng
+            CardPrevious.Image = AdjustBrightness(originalImageCard, 0.8f); // Giảm độ sáng
             blinkTimer.Start();
         }
         private void ApplyHoverEffect()
         {
-            drawCard.Image = AdjustBrightness(originalImageCard, 1.2f);
+            CardPrevious.Image = AdjustBrightness(originalImageCard, 1.2f);
         }
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -297,29 +297,14 @@ namespace UNO
             emojiPanel.Visible = !emojiPanel.Visible;
         }
         private void PictureBox_MouseEnter(object sender, EventArgs e) => ApplyHoverEffect();
-        private void PictureBox_MouseLeave(object sender, EventArgs e) => drawCard.Image = originalImageCard;
+        private void PictureBox_MouseLeave(object sender, EventArgs e) => CardPrevious.Image = originalImageCard;
         private void PictureBox_MouseDown(object sender, MouseEventArgs e) => ApplyClickEffect();
-        private void PictureBox_MouseUp(object sender, MouseEventArgs e) => drawCard.Image = originalImageCard;
+        private void PictureBox_MouseUp(object sender, MouseEventArgs e) => CardPrevious.Image = originalImageCard;
         private System.Windows.Forms.Timer aTimer;
         private int counter = 10; // Giá trị khởi tạo
         private void drawCard_Click(object sender, EventArgs e)
         {
-            // Dừng và hủy timer cũ nếu đang chạy
-            if (aTimer != null)
-            {
-                aTimer.Stop();
-                aTimer.Dispose();
-            }
-
-            // Reset giá trị đếm
-            counter = 10;
-            TimeMe.Text = counter.ToString();
-
-            // Tạo timer mới
-            aTimer = new System.Windows.Forms.Timer();
-            aTimer.Tick += aTimer_Tick;
-            aTimer.Interval = 1000;
-            aTimer.Start();
+         
         }
         private void Form1_Resize(object sender, EventArgs e)
         {
@@ -414,7 +399,22 @@ namespace UNO
 
         private void button1_Click(object sender, EventArgs e)
         {
+            // Dừng và hủy timer cũ nếu đang chạy
+            if (aTimer != null)
+            {
+                aTimer.Stop();
+                aTimer.Dispose();
+            }
 
+            // Reset giá trị đếm
+            counter = 10;
+            TimeMe.Text = counter.ToString();
+
+            // Tạo timer mới
+            aTimer = new System.Windows.Forms.Timer();
+            aTimer.Tick += aTimer_Tick;
+            aTimer.Interval = 1000;
+            aTimer.Start();
         }
 
         private void Card5_Click(object sender, EventArgs e)
