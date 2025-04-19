@@ -38,6 +38,12 @@ namespace UNO
          */
         private Dictionary<string, Image> imageCards = new Dictionary<string, Image>();
 
+        //Lưu tên toàn bộ bài người chơi đang giữ
+        private List<string> playerHand = new List<string>();
+
+        //Lưu vị trí đầu tiên mà mình sẽ thực hiện in một lần 6 lá bài, khởi tạo là 0
+        private int firstIndex = 0;
+
         //Lưu toàn bộ lá bài vào trong Dictionary/map với key là tên file (đã theo quy ước)
         private void LoadCards()
         {
@@ -61,44 +67,112 @@ namespace UNO
         }
 
         //Update danh sách lá bài, với việc thay đổi từng lá bài nằm ở hàm này
-        //Tham số thứ hai chỉ ra picturebox nào sẽ bị thay đối
+        //Tham số thứ hai chỉ ra picturebox nào sẽ bị thay đổi
         private void DisplayCard(string cardName, PictureBox pictureBox)
         {
-
+            try
+            {
+                pictureBox.Image = imageCards[cardName];
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading image: " + ex.Message);
+            }
         }
 
         //Như tên hàm, xuất ra sáu lá bài đầu tiên, chủ yếu dùng khi mà người dùng mới vào trận
         private void DisplayFirstSixCards()
         {
+            //test trước về load card, sẽ xóa sau
+            playerHand.Add("R0");
+            playerHand.Add("G0");
+            playerHand.Add("B0");
+            playerHand.Add("DP");
+            playerHand.Add("DD");
+            playerHand.Add("RD");
 
+            playerHand.Add("R1");
+            playerHand.Add("G1");
+            playerHand.Add("B1");
+            playerHand.Add("DD");
+            playerHand.Add("DP");
+            playerHand.Add("RP");
+
+            playerHand.Add("R0");
+            playerHand.Add("G0");
+
+
+            for (int i = 0; i < 6; i++)
+            {
+                //nếu danh sách bài người chơi có ít hơn 6 lá thì ngắt khi chỉ số vượt quá giới hạn
+                if (i >= playerHand.Count) return;
+
+                //Tìm pictureBox sẽ hiển thị lá bài ở vị trí tương ứng
+                string pictureBoxName = "Card" + (i + 1).ToString();
+                PictureBox pictureBox = this.Controls[pictureBoxName] as PictureBox;
+
+                //Hiển thị lá bài tại pictureBox đã tìm được
+                DisplayCard(playerHand[i], pictureBox);
+            }
         }
 
-        /* Ba hàm dưới đây sử dụng biến firstIndex để hiển thị 6 lá bài từ danh sách lá bài của người dùng
-        
+        // Ba hàm dưới đây sử dụng biến firstIndex để hiển thị 6 lá bài từ danh sách lá bài của người dùng
+
         //Xử lí khi người dùng bấm nút next
-        // private void nextBtn_Click(object sender, EventArgs e) {}
+        private void NextButton_Click(object sender, EventArgs e)
+        {
+            if (firstIndex + 6 >= playerHand.Count) return;
+            firstIndex += 6;
+            UpdateSixCards();
+        }
 
         //Xử lí khi người dùng bấm nút back
-        // private void nextBtn_Click(object sender, EventArgs e) {}
+        private void PreviousButton_Click(object sender, EventArgs e)
+        {
+            if (firstIndex - 6 < 0) return;
+            firstIndex -= 6;
+            UpdateSixCards();
+        }
 
         //Hàm xử lí hiển thị lại các lá bài khi nhấn vào hai nút back/next 
-        // private void UpdateSixCards() {}
+        private void UpdateSixCards()
+        {
+            //reset ảnh toàn bộ 6 picturebox
+            Card1.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+            Card2.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+            Card3.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+            Card4.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+            Card5.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+            Card6.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
 
-        */
+            for (int i = firstIndex; i < firstIndex + 6; i++)
+            {
+                //nếu danh sách bài người chơi có ít hơn 6 lá thì ngắt khi chỉ số vượt quá giới hạn
+                if (i >= playerHand.Count) return;
+
+                //Tìm pictureBox sẽ hiển thị lá bài ở vị trí tương ứng
+                string pictureBoxName = "Card" + ((i % 6) + 1).ToString();
+                PictureBox pictureBox = this.Controls[pictureBoxName] as PictureBox;
+
+                //Hiển thị lá bài tại pictureBox đã tìm được
+                DisplayCard(playerHand[i], pictureBox);
+            }
+        }
+
 
         //Hàm kiểm tra tính hợp lệ của lá bài khi nhấn vào, nếu hợp lệ thì khi nhấn lần nữa sẽ chơi lá đó
-        //private void pictureBox_Click(object sender, EventArgs e) {}
+        private void pictureBox_Click(object sender, EventArgs e) { }
 
-        /*
-         // Xử lí khi nhấn nút Draw
-         // private void drawBtn_Click(object sender, EventArgs e) {}
-         
-         // Hàm xử lí yêu cầu rút thêm lá khi người dùng nhấn nút Draw
-         // private DrawCards(int count) {} nếu xử lí được +2 +4 tự động thì không cần tham số count
-         */
+        // Xử lí khi nhấn nút Draw
+        private void drawBtn_Click(object sender, EventArgs e) { }
+
+        // Hàm xử lí yêu cầu rút thêm lá khi người dùng nhấn nút Draw
+        //nếu xử lí được +2 +4 tự động thì không cần tham số count
+        private void DrawCards(int count) { } 
+
 
         //Hàm sắp xếp lại danh sách bài người chơi
-        // private void sortBtn_Click(object sender, EventArgs e) {}
+        private void sortBtn_Click(object sender, EventArgs e) { }
         public Arena()
         {
             InitializeComponent();
@@ -121,6 +195,10 @@ namespace UNO
             imojiButon.MouseLeave += pictureBox1_MouseLeave;
             setting.MouseDown += setting_MouseDown;
             setting.MouseUp += setting_MouseUp;
+
+            //định nghĩa các hàm khi vào trận
+            LoadCards();
+            DisplayFirstSixCards();
         }
         private void setting_MouseDown(object sender, MouseEventArgs e)
         {
@@ -304,7 +382,7 @@ namespace UNO
         private int counter = 10; // Giá trị khởi tạo
         private void drawCard_Click(object sender, EventArgs e)
         {
-         
+
         }
         private void Form1_Resize(object sender, EventArgs e)
         {
@@ -418,6 +496,11 @@ namespace UNO
         }
 
         private void Card5_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Card6_Click(object sender, EventArgs e)
         {
 
         }

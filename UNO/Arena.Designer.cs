@@ -239,6 +239,7 @@
             PreviousButton.TabIndex = 13;
             PreviousButton.Text = "<";
             PreviousButton.UseVisualStyleBackColor = true;
+            PreviousButton.Click += PreviousButton_Click;
             // 
             // NextButton
             // 
@@ -249,6 +250,7 @@
             NextButton.TabIndex = 14;
             NextButton.Text = ">";
             NextButton.UseVisualStyleBackColor = true;
+            NextButton.Click += NextButton_Click;
             // 
             // SortButton
             // 
@@ -271,6 +273,7 @@
             Card6.SizeMode = PictureBoxSizeMode.Zoom;
             Card6.TabIndex = 21;
             Card6.TabStop = false;
+            Card6.Click += Card6_Click;
             // 
             // TimeEnemy
             // 
