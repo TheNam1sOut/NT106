@@ -25,6 +25,8 @@ namespace UNO
         private TableLayoutPanel emojiTable;
         private int columns = 3;
         private int rows = 3;
+        private List<string> deck;      // bộ bài còn lại để rút
+        private Random rand = new Random();
 
         /* Một map lưu tất cả hình ảnh lá bài và key để truy xuất các phần tử đó
          * Quy ước về tên lá bài:
@@ -57,6 +59,19 @@ namespace UNO
             {
                 string fileCardName = System.IO.Path.GetFileNameWithoutExtension(cardName);
                 imageCards[fileCardName] = Image.FromFile(cardName);
+            }
+            deck = imageCards.Keys.ToList();
+            ShuffleDeck();
+        }
+
+        private void ShuffleDeck()
+        {
+            for (int i = deck.Count - 1; i > 0; i--)
+            {
+                int j = rand.Next(i + 1);
+                var tmp = deck[j];
+                deck[j] = deck[i];
+                deck[i] = tmp;
             }
         }
 
@@ -168,7 +183,26 @@ namespace UNO
 
         // Hàm xử lí yêu cầu rút thêm lá khi người dùng nhấn nút Draw
         //nếu xử lí được +2 +4 tự động thì không cần tham số count
-        private void DrawCards(int count) { } 
+        private void DrawCards(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (deck.Count == 0)
+                {
+                    MessageBox.Show("Hết bài để rút!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    break;
+                }
+
+                // Lấy lá đầu tiên, remove khỏi deck, add vào tay người chơi
+                string card = deck[0];
+                deck.RemoveAt(0);
+                playerHand.Add(card);
+            }
+
+            // Cập nhật lại 6 lá đang hiển thị
+            UpdateSixCards();
+        }
+
 
 
         //Hàm sắp xếp lại danh sách bài người chơi
@@ -478,6 +512,7 @@ namespace UNO
         private void button1_Click(object sender, EventArgs e)
         {
             // Dừng và hủy timer cũ nếu đang chạy
+            DrawCards(1);
             if (aTimer != null)
             {
                 aTimer.Stop();
@@ -503,6 +538,17 @@ namespace UNO
         private void Card6_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void Card2_Click(object sender, EventArgs e)
+        {
+
+        }
+        // hàm sort theo màu và số 
+        private void SortButton_Click(object sender, EventArgs e)
+        {
+            playerHand.Sort();
+            UpdateSixCards();
         }
     }
 }
