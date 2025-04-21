@@ -27,6 +27,12 @@ namespace UNO
         private int rows = 3;
         private List<string> deck;      // bộ bài còn lại để rút
         private Random rand = new Random();
+        // trạng thái lá bài giữa và lượt chơi
+        private string currentMiddleCard;
+        private char currentColor;       // 'R','G','B','Y' hoặc 'W' (wild)
+        private string currentValue;     // "0"-"9", "C","D","P", "DD","DP"
+        private bool isPlayerTurn = true; // true: đến lượt client, false: đối thủ (sau này dùng mạng)
+
 
         /* Một map lưu tất cả hình ảnh lá bài và key để truy xuất các phần tử đó
          * Quy ước về tên lá bài:
@@ -63,7 +69,30 @@ namespace UNO
             deck = imageCards.Keys.ToList();
             ShuffleDeck();
         }
+        private void InitializeMiddleCard()
+        {
+            DisplayMiddleCard(); // gọi ngay sau LoadCards(), trước DisplayFirstSixCards()
+        }
+        private void DisplayMiddleCard()
+        {
+            if (deck.Count == 0)
+            {
+                MessageBox.Show("Không còn bài để đặt giữa!");
+                return;
+            }
 
+            // Rút lá đầu tiên trong deck (sau khi đã Shuffle)
+            currentMiddleCard = deck[0];
+            deck.RemoveAt(0);
+
+            // Lấy màu và giá trị
+            currentColor = currentMiddleCard[0];         // R/G/B/Y/DP/DD ...
+            currentValue = currentMiddleCard.Substring(1);
+
+            // Hiển thị ảnh
+            MiddlePictureBox.Image = imageCards[currentMiddleCard];
+            MiddlePictureBox.Tag = currentMiddleCard;    // lưu lại key để truy xuất nếu cần
+        }
         private void ShuffleDeck()
         {
             for (int i = deck.Count - 1; i > 0; i--)
@@ -76,24 +105,9 @@ namespace UNO
         }
 
         //Update lá bài nằm ở giữa
-        private void DisplayCard(string cardName)
-        {
-
-        }
-
         //Update danh sách lá bài, với việc thay đổi từng lá bài nằm ở hàm này
         //Tham số thứ hai chỉ ra picturebox nào sẽ bị thay đổi
-        private void DisplayCard(string cardName, PictureBox pictureBox)
-        {
-            try
-            {
-                pictureBox.Image = imageCards[cardName];
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading image: " + ex.Message);
-            }
-        }
+
 
         //Như tên hàm, xuất ra sáu lá bài đầu tiên, chủ yếu dùng khi mà người dùng mới vào trận
         private void DisplayFirstSixCards()
@@ -176,9 +190,6 @@ namespace UNO
 
 
         //Hàm kiểm tra tính hợp lệ của lá bài khi nhấn vào, nếu hợp lệ thì khi nhấn lần nữa sẽ chơi lá đó
-        private void pictureBox_Click(object sender, EventArgs e) { }
-
-        // Xử lí khi nhấn nút Draw
         private void drawBtn_Click(object sender, EventArgs e) { }
 
         // Hàm xử lí yêu cầu rút thêm lá khi người dùng nhấn nút Draw
@@ -213,16 +224,6 @@ namespace UNO
             InitializeCustomComponents();
             InitializeEmojiPanel();
             originalImageCard = new Bitmap(Properties.Resources.pngtree_uno_card_png_image_9101654);
-
-
-            blinkTimer = new Timer();
-            blinkTimer.Interval = 100;
-            blinkTimer.Tick += BlinkTimer_Tick;
-            CardPrevious.Cursor = Cursors.Hand;
-            CardPrevious.MouseEnter += drawCard_MouseEnter;
-            CardPrevious.MouseLeave += drawCard_MouseLeave;
-            CardPrevious.MouseDown += PictureBox_MouseDown;
-            CardPrevious.MouseUp += PictureBox_MouseUp;
             imojiButon.Cursor = Cursors.Hand;
             imojiButon.Click += pictureBox1_Click;
             imojiButon.MouseEnter += pictureBox1_MouseEnter;
@@ -232,7 +233,13 @@ namespace UNO
 
             //định nghĩa các hàm khi vào trận
             LoadCards();
+            InitializeMiddleCard();
             DisplayFirstSixCards();
+        }
+        private void DisplayCard(string cardName, PictureBox pictureBox)
+        {
+            pictureBox.Image = imageCards[cardName];
+            pictureBox.Tag = cardName;      // rất quan trọng để lấy lại key khi click
         }
         private void setting_MouseDown(object sender, MouseEventArgs e)
         {
@@ -247,9 +254,9 @@ namespace UNO
         private void InitializeCustomComponents()
         {
             imojiButon.Parent = this;
-            CardPrevious.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            CardPrevious.BackColor = Color.Transparent;
-            CardPrevious.SizeMode = PictureBoxSizeMode.StretchImage;
+            MiddlePictureBox.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
+            MiddlePictureBox.BackColor = Color.Transparent;
+            MiddlePictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
             imojiButon.Image = Properties.Resources._19822c18e912ad0ffb2ad2faed8a61af__1__removebg_preview1;
             imojiButon.BackColor = Color.Transparent;
             imojiButon.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -266,23 +273,127 @@ namespace UNO
             setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
             setting.BackColor = Color.Transparent;
             setting.SizeMode = PictureBoxSizeMode.StretchImage;
+            foreach (var i in Enumerable.Range(1, 6))
+            {
+                var pb = this.Controls[$"Card{i}"] as PictureBox;
+                pb.Click += PlayerCard_Click;
+            }
+
             setting.Cursor = Cursors.Hand;
         }
 
-        private void BlinkTimer_Tick(object sender, EventArgs e)
+
+        private string pendingCard = null;  // lá đã click lần 1
+
+        private void PlayerCard_Click(object sender, EventArgs e)
         {
-            if (isBlinking)
+            var pb = sender as PictureBox;
+            if (pb == null || pb.Tag == null) return;
+
+            string cardName = pb.Tag.ToString();
+
+            // Nếu chưa tới lượt thì cảnh báo
+            if (!isPlayerTurn)
             {
-                CardPrevious.Image = originalImageCard;
-                isBlinking = false;
-                blinkTimer.Stop();
+                MessageBox.Show("Chưa đến lượt bạn!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Lần click đầu: kiểm tra hợp lệ
+            if (pendingCard == null)
+            {
+                if (!IsValidMove(cardName))
+                {
+                    MessageBox.Show("Bạn không thể đánh lá này!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                pendingCard = cardName;
+                pb.BorderStyle = BorderStyle.Fixed3D;  // highlight
+                return;
+            }
+
+            // Lần click hai: phải cùng lá với pending, thực sự đánh
+            if (cardName != pendingCard)
+            {
+                // bấm lá khác thì xóa highlight cũ và set lá mới
+                ClearPendingHighlight();
+                pendingCard = cardName;
+                pb.BorderStyle = BorderStyle.Fixed3D;
+                return;
+            }
+
+            // Xử lý đánh
+            pb.BorderStyle = BorderStyle.None;
+            ClearPendingHighlight();  // xoá highlight
+            PlayCard(cardName, pb);
+            pendingCard = null;
+        }
+        private void PlayCard(string cardName, PictureBox pb)
+        {
+            // 1. Xoá khỏi tay
+            playerHand.Remove(cardName);
+            // 2. Update UI: xoá pictureBox hoặc đổi sang lá úp
+            pb.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
+            pb.Tag = null;
+
+            // 3. Nếu là đổi màu (DD hoặc DP), hỏi chọn màu mới
+            if (cardName == "DD" || cardName == "DP")
+            {
+                char chosen = PromptForColor(); // 'R','G','B','Y'
+                currentColor = chosen;
+                currentValue = cardName;
             }
             else
             {
-                CardPrevious.Image = AdjustBrightness(originalImageCard, 1.5f);
-                isBlinking = true;
+                // cập nhật trạng thái lá giữa
+                currentMiddleCard = cardName;
+                currentColor = cardName[0];
+                currentValue = cardName.Substring(1);
+            }
+
+            MiddlePictureBox.Image = imageCards[cardName];
+            MiddlePictureBox.Tag = cardName;
+
+            // 4. Chuyển lượt
+            isPlayerTurn = false;
+            // TODO: gửi trạng thái mạng cho đối thủ hoặc gọi hàm xử lý lượt đối thủ
+        }
+        private char PromptForColor()
+        {
+            // Cách đơn giản: MessageBox 4 nút hoặc ColorDialog
+            using (Form f = new Form())
+            {
+                f.Text = "Chọn màu";
+                var panel = new FlowLayoutPanel { Dock = DockStyle.Fill };
+                foreach (var kv in new Dictionary<char, string>
+                 { {'R',"Đỏ"}, {'G',"Xanh lá"}, {'B',"Xanh dương"}, {'Y',"Vàng"} })
+                {
+                    var btn = new Button { Text = kv.Value, Tag = kv.Key, AutoSize = true };
+                    btn.Click += (s, e) => { f.Tag = ((Button)s).Tag; f.Close(); };
+                    panel.Controls.Add(btn);
+                }
+                f.Controls.Add(panel);
+                f.StartPosition = FormStartPosition.CenterParent;
+                f.ShowDialog();
+                return f.Tag != null ? (char)f.Tag : 'R';
             }
         }
+        private bool IsValidMove(string cardName)
+        {
+            // Wild (DD hoặc DP) luôn hợp lệ
+            if (cardName == "DD" || cardName == "DP") return true;
+
+            // Lấy màu & giá trị
+            char color = cardName[0];
+            string value = cardName.Substring(1);
+
+            // Theo quy tắc UNO: hợp lệ khi màu trùng hoặc số/symbol trùng
+            if (color == currentColor) return true;
+            if (value == currentValue) return true;
+
+            return false;
+        }
+
         private Bitmap AdjustBrightness(Bitmap image, float brightness)
         {
             Bitmap adjustedImage = new Bitmap(image.Width, image.Height);
@@ -313,12 +424,12 @@ namespace UNO
         }
         private void ApplyClickEffect()
         {
-            CardPrevious.Image = AdjustBrightness(originalImageCard, 0.8f); // Giảm độ sáng
+            MiddlePictureBox.Image = AdjustBrightness(originalImageCard, 0.8f); // Giảm độ sáng
             blinkTimer.Start();
         }
         private void ApplyHoverEffect()
         {
-            CardPrevious.Image = AdjustBrightness(originalImageCard, 1.2f);
+            MiddlePictureBox.Image = AdjustBrightness(originalImageCard, 1.2f);
         }
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -409,9 +520,9 @@ namespace UNO
             emojiPanel.Visible = !emojiPanel.Visible;
         }
         private void PictureBox_MouseEnter(object sender, EventArgs e) => ApplyHoverEffect();
-        private void PictureBox_MouseLeave(object sender, EventArgs e) => CardPrevious.Image = originalImageCard;
+        private void PictureBox_MouseLeave(object sender, EventArgs e) => MiddlePictureBox.Image = originalImageCard;
         private void PictureBox_MouseDown(object sender, MouseEventArgs e) => ApplyClickEffect();
-        private void PictureBox_MouseUp(object sender, MouseEventArgs e) => CardPrevious.Image = originalImageCard;
+        private void PictureBox_MouseUp(object sender, MouseEventArgs e) => MiddlePictureBox.Image = originalImageCard;
         private System.Windows.Forms.Timer aTimer;
         private int counter = 10; // Giá trị khởi tạo
         private void drawCard_Click(object sender, EventArgs e)
@@ -550,5 +661,18 @@ namespace UNO
             playerHand.Sort();
             UpdateSixCards();
         }
+        private void ClearPendingHighlight()
+        {
+            // Lặp qua các PictureBox Card1…Card6
+            for (int i = 1; i <= 6; i++)
+            {
+                var pb = this.Controls[$"Card{i}"] as PictureBox;
+                if (pb != null)
+                {
+                    pb.BorderStyle = BorderStyle.None;
+                }
+            }
+        }
+
     }
 }
