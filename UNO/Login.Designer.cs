@@ -57,6 +57,7 @@
             loginBtn.TabIndex = 0;
             loginBtn.Text = "Login";
             loginBtn.UseVisualStyleBackColor = false;
+            loginBtn.Click += loginBtn_Click;
             // 
             // textBox1
             // 
