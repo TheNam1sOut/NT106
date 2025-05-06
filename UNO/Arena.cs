@@ -12,6 +12,7 @@ using System.Drawing.Imaging;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 using Timer = System.Windows.Forms.Timer;
+using System.Net.Sockets;
 
 namespace UNO
 {
@@ -236,6 +237,26 @@ namespace UNO
             InitializeMiddleCard();
             DisplayFirstSixCards();
         }
+
+        public Arena(string playerName, TcpClient playerSocket, string roomName)
+        {
+            InitializeComponent();
+            InitializeCustomComponents();
+            InitializeEmojiPanel();
+            originalImageCard = new Bitmap(Properties.Resources.pngtree_uno_card_png_image_9101654);
+            imojiButon.Cursor = Cursors.Hand;
+            imojiButon.Click += pictureBox1_Click;
+            imojiButon.MouseEnter += pictureBox1_MouseEnter;
+            imojiButon.MouseLeave += pictureBox1_MouseLeave;
+            setting.MouseDown += setting_MouseDown;
+            setting.MouseUp += setting_MouseUp;
+
+            //định nghĩa các hàm khi vào trận
+            LoadCards();
+            InitializeMiddleCard();
+            DisplayFirstSixCards();
+        }
+
         private void DisplayCard(string cardName, PictureBox pictureBox)
         {
             pictureBox.Image = imageCards[cardName];

@@ -25,13 +25,12 @@ namespace UNO
                 NetworkStream stream = player.GetStream();
                 byte[] buffer = Encoding.UTF8.GetBytes($"Player: {textBox1.Text.Trim()}");
                 stream.Write(buffer, 0, buffer.Length);
-                stream.Close();
 
                 //đóng form đăng ký và mở form menu
-                this.Hide();
+                //this.Hide();
                 Menu Form1 = new Menu(textBox1.Text.Trim(), player);
-                Form1.ShowDialog();
-                this.Close();
+                Form1.Show();
+                //this.Close();
             }
             catch (Exception ex) 
             {
