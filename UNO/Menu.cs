@@ -55,8 +55,8 @@ namespace UNO
                         {
                             MessageBox.Show($"Success added to new room: {message.Substring(6).Trim()}");
                             Arena form1 = new Arena(username, tcpPlayer, message.Substring(6).Trim());
-                            //this.Hide();
-                            form1.Show();
+                            this.Hide();
+                            form1.Show();                        
                             break;
                         }
                     }

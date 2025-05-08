@@ -13,11 +13,14 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 using Timer = System.Windows.Forms.Timer;
 using System.Net.Sockets;
+using System.IO;
 
 namespace UNO
 {
     public partial class Arena : Form
     {
+        private NetworkStream stream;
+        public TcpClient TcpClient;
         private Panel emojiPanel;
         private Timer blinkTimer;
         private bool isBlinking = false;
@@ -250,7 +253,8 @@ namespace UNO
             imojiButon.MouseLeave += pictureBox1_MouseLeave;
             setting.MouseDown += setting_MouseDown;
             setting.MouseUp += setting_MouseUp;
-
+            Room.Text += " " + roomName;
+            this.TcpClient=playerSocket;
             //định nghĩa các hàm khi vào trận
             LoadCards();
             InitializeMiddleCard();
@@ -585,9 +589,18 @@ namespace UNO
             }
         }
 
-        private void Arena_Load(object sender, EventArgs e)
+        public  async void Arena_Load(object sender, EventArgs e)
         {
-            // Xử lý khi form được load
+            try
+            {
+                stream = TcpClient.GetStream();
+                await ReceiveMessagesfromsv();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error connecting to server: " + ex.Message);
+            }
+
         }
 
         private void AvatarPlayer_Click(object sender, EventArgs e)
@@ -695,5 +708,93 @@ namespace UNO
             }
         }
 
+        private void Card1_Click(object sender, EventArgs e)
+        {
+
+        }
+        private async Task ReceiveMessagesfromsv()
+        {
+            try
+            {
+               
+                while (true)
+                {
+                        if (TcpClient == null || !TcpClient.Connected)
+                        {
+                            MessageBox.Show("Not connected to server. Please reconnect.");
+                            return;
+                        }
+
+                        byte[] bytereceive = new byte[1024];
+
+                        int byteCount = await stream.ReadAsync(bytereceive, 0, bytereceive.Length); // Đọc dữ liệu từ server
+
+
+                        if (byteCount > 0)
+                        {
+
+                            string msg = Encoding.UTF8.GetString(bytereceive, 0, byteCount); // Chuyển đổi dữ liệu nhận được thành chuỗi
+                            if (msg.StartsWith("isPlay: "))
+                            {
+                           
+                                var IsPlayControls = new[] { isPlay1, isPlay2 };
+                                foreach (var control in IsPlayControls)
+                                {
+                                    control.BackColor = Color.White;
+                                }
+                                string[] IdCards = msg.Split(':')[1].Trim().Split(','); // Lấy danh sách ID từ thông báo
+                                
+                                for (int i = 0; i < IdCards.Length; i++)
+                                {
+                                //MessageBox.Show(IdCards[i]);
+                                if (IdCards[i] == "1")
+                                    {
+                                        IsPlayControls[i].BackColor = Color.Yellow;
+                                    }
+                                }
+                                if (IdCards.Skip(1).Take(4).All(id => id.Trim() == "1"))
+                                {
+                                    foreach (var control in IsPlayControls)
+                                    {
+                                        control.Visible = false;
+                                    }
+                                }
+                              
+                            }
+                            else
+                            {
+                                MessageBox.Show("Lỗi không xác định!");
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("erroor");
+                        }
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private async void ReadyBtn_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                byte[] buffer = Encoding.UTF8.GetBytes($"Ready: {Room.Text.Trim()}");
+                await stream.WriteAsync(buffer, 0, buffer.Length); // Gửi thông báo "Ready" đến server
+                ReadyBtn.Visible = false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void Room_TextChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
