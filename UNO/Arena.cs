@@ -117,7 +117,7 @@ namespace UNO
         private void DisplayFirstSixCards()
         {
             //test trước về load card, sẽ xóa sau
-            playerHand.Add("R0");
+           /* playerHand.Add("R0");
             playerHand.Add("G0");
             playerHand.Add("B0");
             playerHand.Add("DP");
@@ -133,7 +133,7 @@ namespace UNO
 
             playerHand.Add("R0");
             playerHand.Add("G0");
-
+           */
 
             for (int i = 0; i < 6; i++)
             {
@@ -738,7 +738,27 @@ namespace UNO
                             {
                            
                                 var IsPlayControls = new[] { isPlay1, isPlay2 };
-                                foreach (var control in IsPlayControls)
+                            // lưu mảng toàn bộ các controls trong form arena
+                            var labelControls = new[] { TimeMe, TimeEnemy };
+                           
+                            var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, ReadyBtn };
+                            var pictureBoxControls = new[]
+                            {
+                                MiddlePictureBox,
+                                AvatarPlayer,
+                                Enemy,
+                                setting,
+                                imojiButon,
+                                ClockIcon,
+                                clock1,
+                                Card1,
+                                Card2,
+                                Card3,
+                                Card4,
+                                Card5,
+                                Card6,
+                            };
+                            foreach (var control in IsPlayControls)
                                 {
                                     control.BackColor = Color.White;
                                 }
@@ -752,13 +772,26 @@ namespace UNO
                                         IsPlayControls[i].BackColor = Color.Yellow;
                                     }
                                 }
-                                if (IdCards.Skip(1).Take(4).All(id => id.Trim() == "1"))
+                                if (IdCards.Skip(1).Take(2).All(id => id.Trim() == "1"))
                                 {
                                     foreach (var control in IsPlayControls)
                                     {
                                         control.Visible = false;
                                     }
+                                //show toàn bộ các controls còn lại
+                                foreach (var control in pictureBoxControls)
+                                {
+                                    control.Visible = true;
                                 }
+                                foreach (var control in buttonControls)
+                                {
+                                    control.Visible = true;
+                                }
+                                foreach (var control in labelControls)
+                                {
+                                    control.Visible = true;
+                                }
+                            }
                               
                             }
                             else

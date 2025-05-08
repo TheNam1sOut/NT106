@@ -70,8 +70,10 @@
                                 string sendPlayRequest = $"Room: {room.id}";
                                 byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                                 acceptedClient.Send(sendClient);
-
-                                break;
+                            string status = $"{room.countrd[1]},{room.countrd[2]}";
+                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}");
+                            acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
+                            break;
                             }
                             //tìm thấy phòng trống thông tin người chơi thứ hai
                             else if (room.player[2].Item1 == string.Empty)
