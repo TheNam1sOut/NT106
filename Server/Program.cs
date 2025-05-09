@@ -3,6 +3,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 Server server = new Server();
 server.StartServer();
@@ -31,8 +32,14 @@ public class Server
         {
             if (room.Dataqueue.Count > 0)
             {
-                string card = room.Dataqueue.Peek();
-                string msg = $"CardTop: {card}";
+                while (room.Dataqueue.Peek() == "DD" || room.Dataqueue.Peek() == "DP")
+                {
+                    string cardDiscard = room.Dataqueue.Peek();
+                    room.Dataqueue.Dequeue();
+                    room.Dataqueue.Enqueue(cardDiscard);
+                }
+                string card = room.Dataqueue.Dequeue();
+                string msg = $"CardTop: {card}\n";
                 foreach (var sock in room.ClientId.Keys)
                 {
                     try
@@ -45,7 +52,6 @@ public class Server
                         Console.WriteLine($"Error sending message to client: {ex.Message}");
                     }
                 }
-                room.Dataqueue.Dequeue();
             }
             else
             {
@@ -53,6 +59,50 @@ public class Server
             }
             
         }
+    }
+    //private void SendInitialQueues(Room room)
+    //{
+    //    // saves dataqueue and dataqueue1 as strings
+    //    string drawPile = string.Join(",", room.Dataqueue);
+    //    string discardPile = string.Join(",", room.Dataqueue1);
+
+    //    //wraps them inside a message to send to the clients
+    //    string message = $"Dataqueue: {drawPile}|{discardPile}\n";
+    //    Console.WriteLine(message.Length);
+    //    foreach (var sock in room.ClientId.Keys)
+    //    {
+    //        try
+    //        {
+    //            byte[] data = Encoding.UTF8.GetBytes(message);
+    //            Console.WriteLine(message.Length);
+    //            sock.Send(data, 0, data.Length, SocketFlags.None);
+    //        }
+    //        catch (SocketException ex)
+    //        {
+    //            Console.WriteLine($"Error sending queues to client: {ex.Message}");
+    //        }
+    //    }
+    //}
+
+    //as what the function says, when the room is first initialized, we send the clients the first cards
+    private void SendInitialHand(Room room)
+    {
+        try
+        {
+            foreach (var sock in room.ClientId.Keys)
+            {
+                List<string> hand = new List<string>();
+                for (int i = 0; i < 6; i++)
+                    hand.Add(room.Dataqueue.Dequeue());
+                string handMsg = "InitialHand: " + string.Join(",", hand) + "\n";
+                var buf = Encoding.UTF8.GetBytes(handMsg);
+                sock.Send(buf);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }   
     }
     private void HandleClient(Socket acceptedClient)
     {
@@ -101,7 +151,7 @@ public class Server
                             byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                             acceptedClient.Send(sendClient);
                             string status = $"{room.countrd[1]},{room.countrd[2]}";
-                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}");
+                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
                             acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
                             break;
                         }
@@ -118,7 +168,7 @@ public class Server
                             byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                             acceptedClient.Send(sendClient);
                             string status = $"{room.countrd[1]},{room.countrd[2]}";
-                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}");
+                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
                             acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
                             break;
                         }
@@ -153,7 +203,7 @@ public class Server
                         room.sumcountrd = room.countrd[1] + room.countrd[2];
                         Console.WriteLine($"Player {username} has ready in room {room.id}");
                         string status = $"{room.countrd[1]},{room.countrd[2]}";
-                        string messageToClients = $"isPlay: {status}";
+                        string messageToClients = $"isPlay: {status}\n";
                         Console.WriteLine(messageToClients);
                         byte[] data = Encoding.UTF8.GetBytes(messageToClients);
                         foreach (var sock in room.ClientId.Keys)
@@ -166,10 +216,24 @@ public class Server
                             Console.WriteLine(room.rommbg + room.sumcountrd);
                             room.rommbg = 1;
                             SenUnoCardTop(room,"");
+                            SendInitialHand(room);
                         }
                     }
                     Console.WriteLine("ready");
                 }
+                //else if (message.StartsWith("New Deck: "))
+                //{
+                //    Room room = FindRoombyClientID(acceptedClient);
+
+                //    string[] newDeck = message.Substring("New Deck: ".Length).Split(',');
+                //    room.Dataqueue.Clear();
+                //    room.Dataqueue1.Clear();
+                //    foreach (string card in newDeck)
+                //    {
+                //        room.Dataqueue.Enqueue(card);
+                //    }
+                //    SendInitialQueues(room);
+                //}
 
             }
             catch (Exception ex)
@@ -211,10 +275,12 @@ public class Server
 
         public void InitializeCardQueue()
         {
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "Uno.txt");
+            string cardsDirectory = "..\\..\\..\\Resources\\UNOCards\\Uno.txt";
 
             // Read data from file and enqueue
-            Dataqueue = ReadFileAndEnqueue(filePath);
+            Dataqueue = ReadFileAndEnqueue(cardsDirectory);
+            //bị lỗi
+            //string filePath = Path.Combine(Directory.GetCurrentDirectory(), "Uno.txt");
 
             // Shuffle the queue elements
             ShuffleQueue(Dataqueue);

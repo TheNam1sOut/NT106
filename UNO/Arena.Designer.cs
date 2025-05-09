@@ -413,7 +413,6 @@
             MaximizeBox = false;
             Name = "Arena";
             Text = "Arena";
-            Load += Arena_Load;
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).EndInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).EndInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).EndInit();

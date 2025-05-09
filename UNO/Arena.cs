@@ -31,6 +31,7 @@ namespace UNO
         private int columns = 3;
         private int rows = 3;
         private List<string> deck;      // bộ bài còn lại để rút
+        private List<string> discardDeck = new List<string>(); // bo bai bo
         private Random rand = new Random();
         // trạng thái lá bài giữa và lượt chơi
         private string currentMiddleCard;
@@ -95,8 +96,11 @@ namespace UNO
             currentValue = currentMiddleCard.Substring(1);
 
             // Hiển thị ảnh
-            MiddlePictureBox.Image = imageCards[currentMiddleCard];
-            MiddlePictureBox.Tag = currentMiddleCard;    // lưu lại key để truy xuất nếu cần
+            this.Invoke((Action)(() =>
+            {
+                MiddlePictureBox.Image = imageCards[currentMiddleCard];
+                MiddlePictureBox.Tag = currentMiddleCard;    // lưu lại key để truy xuất nếu cần
+            }));
         }
         private void ShuffleDeck()
         {
@@ -109,6 +113,17 @@ namespace UNO
             }
         }
 
+        private void ShuffleDiscardDeck()
+        {
+            for (int i = discardDeck.Count - 1; i > 0; i--)
+            {
+                int j = rand.Next(i + 1);
+                var tmp = discardDeck[j];
+                discardDeck[j] = discardDeck[i];
+                discardDeck[i] = tmp;
+            }
+        }
+
         //Update lá bài nằm ở giữa
         //Update danh sách lá bài, với việc thay đổi từng lá bài nằm ở hàm này
         //Tham số thứ hai chỉ ra picturebox nào sẽ bị thay đổi
@@ -117,25 +132,6 @@ namespace UNO
         //Như tên hàm, xuất ra sáu lá bài đầu tiên, chủ yếu dùng khi mà người dùng mới vào trận
         private void DisplayFirstSixCards()
         {
-            //test trước về load card, sẽ xóa sau
-           /* playerHand.Add("R0");
-            playerHand.Add("G0");
-            playerHand.Add("B0");
-            playerHand.Add("DP");
-            playerHand.Add("DD");
-            playerHand.Add("RD");
-
-            playerHand.Add("R1");
-            playerHand.Add("G1");
-            playerHand.Add("B1");
-            playerHand.Add("DD");
-            playerHand.Add("DP");
-            playerHand.Add("RP");
-
-            playerHand.Add("R0");
-            playerHand.Add("G0");
-           */
-
             for (int i = 0; i < 6; i++)
             {
                 //nếu danh sách bài người chơi có ít hơn 6 lá thì ngắt khi chỉ số vượt quá giới hạn
@@ -172,12 +168,15 @@ namespace UNO
         private void UpdateSixCards()
         {
             //reset ảnh toàn bộ 6 picturebox
-            Card1.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
-            Card2.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
-            Card3.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
-            Card4.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
-            Card5.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
-            Card6.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+            this.Invoke((Action)(() =>
+            {
+                Card1.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+                Card2.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+                Card3.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+                Card4.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+                Card5.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+                Card6.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+            }));
 
             for (int i = firstIndex; i < firstIndex + 6; i++)
             {
@@ -198,23 +197,55 @@ namespace UNO
         private void drawBtn_Click(object sender, EventArgs e) { }
 
         // Hàm xử lí yêu cầu rút thêm lá khi người dùng nhấn nút Draw
-        //nếu xử lí được +2 +4 tự động thì không cần tham số count
-        private void DrawCards(int count)
+        private async Task DrawCards(int count)
         {
+
             for (int i = 0; i < count; i++)
             {
-                if (deck.Count == 0)
+                if (deck.Count > 0)
                 {
-                    MessageBox.Show("Hết bài để rút!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    break;
-                }
+                    string card = deck[0];
+                    playerHand.Add(card);
+                    deck.RemoveAt(0);
 
-                // Lấy lá đầu tiên, remove khỏi deck, add vào tay người chơi
-                string card = deck[0];
-                deck.RemoveAt(0);
-                playerHand.Add(card);
+                    //each time the user draws, sends the update to the server
+                    string message = "Drawn\n";
+                    byte[] buffer = Encoding.UTF8.GetBytes(message);
+                    await stream.WriteAsync(buffer, 0, buffer.Length);
+                }
+                else
+                {
+                    //tron lai chong bai bo va bo vao chong bai chinh
+                    ShuffleDiscardDeck();
+                    foreach (string tmpCard in discardDeck)
+                    {
+                        int index = deck.Count;
+                        deck[index] = tmpCard;
+                    }
+                    discardDeck.Clear();
+
+                    //thao tac nhu tren
+                    string card = deck[0];
+                    playerHand.Add(card);
+                    deck.RemoveAt(0);
+
+                    //gui chong bai da thay doi den server
+                    string message = "New Deck: ";
+                    string drawPile = string.Join(',', deck);
+                    foreach (string tmpCard in deck)
+                    {
+                        message += tmpCard + drawPile;
+                    }
+                    message += '\n';
+                    byte[] buffer = Encoding.UTF8.GetBytes(message);
+                    await stream.WriteAsync(buffer, 0, buffer.Length);
+                }
             }
 
+            // nhan voi server la da rut het so luong can thiet
+            string messageDone = "Done\n";
+            byte[] buffer1 = Encoding.UTF8.GetBytes(messageDone);
+            await stream.WriteAsync(buffer1, 0, buffer1.Length);
             // Cập nhật lại 6 lá đang hiển thị
             UpdateSixCards();
         }
@@ -238,8 +269,7 @@ namespace UNO
 
             //định nghĩa các hàm khi vào trận
             LoadCards();
-            InitializeMiddleCard();
-            DisplayFirstSixCards();
+            this.Shown += Arena_Shown;
         }
 
         public Arena(string playerName, TcpClient playerSocket, string roomName)
@@ -258,14 +288,17 @@ namespace UNO
             this.TcpClient=playerSocket;
             //định nghĩa các hàm khi vào trận
             LoadCards();
-            InitializeMiddleCard();
-            DisplayFirstSixCards();
+            this.Shown += Arena_Shown;
         }
 
         private void DisplayCard(string cardName, PictureBox pictureBox)
         {
-            pictureBox.Image = imageCards[cardName];
-            pictureBox.Tag = cardName;      // rất quan trọng để lấy lại key khi click
+            this.Invoke((Action)(() =>
+            {
+                pictureBox.Image = imageCards[cardName];
+                pictureBox.Tag = cardName;      // rất quan trọng để lấy lại key khi click
+            }));
+            
         }
         private void setting_MouseDown(object sender, MouseEventArgs e)
         {
@@ -457,10 +490,6 @@ namespace UNO
         {
             MiddlePictureBox.Image = AdjustBrightness(originalImageCard, 1.2f);
         }
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
         private void InitializeEmojiPanel()
         {
             emojiPanel = new Panel();
@@ -590,7 +619,7 @@ namespace UNO
             }
         }
 
-        public  async void Arena_Load(object sender, EventArgs e)
+        public  async void Arena_Shown(object sender, EventArgs e)
         {
             try
             {
@@ -717,117 +746,164 @@ namespace UNO
         {
             try
             {
-               
+                using var reader = new StreamReader(stream, Encoding.UTF8);
                 while (true)
                 {
-                        if (TcpClient == null || !TcpClient.Connected)
+                    if (TcpClient == null || !TcpClient.Connected)
+                    {
+                        // marshal MessageBox onto UI thread
+                        if (this.InvokeRequired)
                         {
-                            MessageBox.Show("Not connected to server. Please reconnect.");
-                            return;
-                        }
-
-                        byte[] bytereceive = new byte[1024];
-
-                        int byteCount = await stream.ReadAsync(bytereceive, 0, bytereceive.Length); // Đọc dữ liệu từ server
-
-
-                        if (byteCount > 0)
-                        {
-
-                            string msg = Encoding.UTF8.GetString(bytereceive, 0, byteCount); // Chuyển đổi dữ liệu nhận được thành chuỗi
-                            if (msg.StartsWith("isPlay: "))
-                            {
-                           
-                                var IsPlayControls = new[] { isPlay1, isPlay2 };
-                                 // lưu mảng toàn bộ các controls trong form arena
-                                var labelControls = new[] { TimeMe, TimeEnemy };
-                           
-                                var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton};
-                                var pictureBoxControls = new[]
-                                {
-                                    MiddlePictureBox,
-                                    AvatarPlayer,
-                                    Enemy,
-                                    setting,
-                                    imojiButon,
-                                    ClockIcon,
-                                    clock1,
-                                    Card1,
-                                    Card2,
-                                    Card3,
-                                    Card4,
-                                    Card5,
-                                    Card6,
-                                };
-                                foreach (var control in IsPlayControls)
-                                {
-                                    control.BackColor = Color.White;
-                                }
-                                string[] IdCards = msg.Split(':')[1].Trim().Split(','); // Lấy danh sách ID từ thông báo
-                                
-                                for (int i = 0; i < IdCards.Length; i++)
-                                {
-                                //MessageBox.Show(IdCards[i]);
-                                if (IdCards[i] == "1")
-                                    {
-                                        IsPlayControls[i].BackColor = Color.Yellow;
-                                    }
-                                }
-                                if (IdCards.All(id => id.Trim() == "1"))
-                                {
-                                    foreach (var control in IsPlayControls)
-                                    {
-                                        control.Visible = false;
-                                    }
-                                    // Fix for CS0119: 'Action' is a type, which is not valid in the given context
-                                    // The issue is caused by an incorrect cast syntax. The correct syntax is to cast to `Action` without parentheses.
-
-                                    this.Invoke((Action)(() =>
-                                    {
-                                        // Your code here
-                                        // Example: Update UI elements
-                                        foreach (var control in pictureBoxControls)
-                                        {
-                                            control.Visible = true;
-                                        }
-                                        foreach (var control in buttonControls)
-                                        {
-                                            control.Visible = true;
-                                        }
-                                        foreach (var control in labelControls)
-                                        {
-                                            control.Visible = true;
-                                        }
-                                    }));
-                                    
-                                    
-
-                                }
-                                
-                            
-                              
-                            }
-                            else if (msg.StartsWith("CardTop: "))
-                            {
-                            // Lấy thông tin lá bài ở giữa  
-                            
-                            CardTop = msg.Split(":")[1].Trim();
-                            
-                            MiddlePictureBox.Image = imageCards[CardTop];
-                            MiddlePictureBox.Tag = CardTop;
-                        }
-                       
+                            this.Invoke((Action)(() =>
+                                MessageBox.Show("Not connected to server. Please reconnect.")
+                            ));
                         }
                         else
                         {
-                            MessageBox.Show("erroor");
+                            MessageBox.Show("Not connected to server. Please reconnect.");
                         }
+                        return;
+                    }
+
+                    string msg = await reader.ReadLineAsync(); // Chuyển đổi dữ liệu nhận được thành chuỗi
+                    if (msg.StartsWith("isPlay: "))
+                    {
+
+                        var IsPlayControls = new[] { isPlay1, isPlay2 };
+                        // lưu mảng toàn bộ các controls trong form arena
+                        var labelControls = new[] { TimeMe, TimeEnemy };
+
+                        var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton };
+                        var pictureBoxControls = new[]
+                        {
+                            MiddlePictureBox,
+                            AvatarPlayer,
+                            Enemy,
+                            setting,
+                            imojiButon,
+                            ClockIcon,
+                            clock1,
+                            Card1,
+                            Card2,
+                            Card3,
+                            Card4,
+                            Card5,
+                            Card6,
+                        };
+                        //foreach (var control in IsPlayControls)
+                        //{
+                        //    this.Invoke((Action)(() =>
+                        //    {
+                        //        control.BackColor = Color.White;
+                        //    }));
+                        //}
+                        string[] IdCards = msg.Split(':')[1].Trim().Split(','); // Lấy danh sách ID từ thông báo
+
+                        //for (int i = 0; i < IdCards.Length; i++)
+                        //{
+                        //    //MessageBox.Show(IdCards[i]);
+                        //    if (IdCards[i] == "1")
+                        //    {
+                        //        this.Invoke((Action)(() =>
+                        //        {
+                        //            IsPlayControls[i].BackColor = Color.Yellow;
+                        //        }));         
+                        //    }
+                        //}
+                        if (IdCards.All(id => id.Trim() == "1"))
+                        {
+                            
+                            // Fix for CS0119: 'Action' is a type, which is not valid in the given context
+                            // The issue is caused by an incorrect cast syntax. The correct syntax is to cast to `Action` without parentheses.
+
+                            this.Invoke((Action)(() =>
+                            {
+                                foreach (var control in IsPlayControls)
+                                {
+                                    control.Visible = false;
+                                }
+                                // Your code here
+                                // Example: Update UI elements
+                                foreach (var control in pictureBoxControls)
+                                {
+                                    control.Visible = true;
+                                }
+                                foreach (var control in buttonControls)
+                                {
+                                    control.Visible = true;
+                                }
+                                foreach (var control in labelControls)
+                                {
+                                    control.Visible = true;
+                                }
+                            }));
+                        } 
+                        else
+                        {
+                            this.Invoke((Action)(() =>
+                            {
+                                for (int i = 0; i < IsPlayControls.Length; i++)
+                                {
+                                    IsPlayControls[i].BackColor = IdCards[i].Trim() == "1"
+                                                                  ? Color.Yellow
+                                                                  : Color.White;
+                                }
+                            }));
+                        }
+                    }
+                    else if (msg.StartsWith("CardTop: "))
+                    {
+                        // Lấy thông tin lá bài ở giữa  
+
+                        CardTop = msg.Substring("CardTop: ".Length).Trim();
+
+                        this.Invoke((Action)(() =>
+                        {
+                            MiddlePictureBox.Image = imageCards[CardTop];
+                            MiddlePictureBox.Tag = CardTop;
+                        }));
+                    }
+                    //handling draw card request
+                    else if (msg.StartsWith("InitialHand: "))
+                    {
+                        //get the draw amount
+                        string[] cards = msg.Substring("InitialHand: ".Length).Split(',');
+                        foreach(string card in cards)
+                        {
+                            playerHand.Add(card);
+                            
+                        }
+                        DisplayFirstSixCards();
+                    }
+                    //update draw pile and discard pile
+                    //else if (msg.StartsWith("Dataqueue: "))
+                    //{
+                    //    string[] parts = msg.Substring("Dataqueue: ".Length).Split('|');
+                    //    if (parts.Length == 2)
+                    //    {
+                    //        string[] dataQueue = parts[0].Split(',');
+                    //        string[] dataQueue1 = parts[1].Split(',');
+
+                    //        deck.Clear();
+                    //        foreach (string card in dataQueue)
+                    //        {
+                    //            deck.Add(card.Trim());
+                    //        }
+                    //        discardDeck.Clear();
+                    //        foreach (string card in dataQueue1)
+                    //        {
+                    //            discardDeck.Add(card.Trim());
+                    //        }
+                    //    }
+                    //}
                 }
-                
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // marshal error dialog
+                this.Invoke((Action)(() =>
+                    MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                ));
             }
         }
         private async void ReadyBtn_Click(object sender, EventArgs e)
