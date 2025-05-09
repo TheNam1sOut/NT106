@@ -773,7 +773,7 @@ namespace UNO
                                         IsPlayControls[i].BackColor = Color.Yellow;
                                     }
                                 }
-                                if (IdCards.Skip(1).Take(2).All(id => id.Trim() == "1"))
+                                if (IdCards.All(id => id.Trim() == "1"))
                                 {
                                     foreach (var control in IsPlayControls)
                                     {
