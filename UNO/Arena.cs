@@ -20,6 +20,7 @@ namespace UNO
     public partial class Arena : Form
     {
         private NetworkStream stream;
+        private string CardTop;
         public TcpClient TcpClient;
         private Panel emojiPanel;
         private Timer blinkTimer;
@@ -738,27 +739,27 @@ namespace UNO
                             {
                            
                                 var IsPlayControls = new[] { isPlay1, isPlay2 };
-                            // lưu mảng toàn bộ các controls trong form arena
-                            var labelControls = new[] { TimeMe, TimeEnemy };
+                                 // lưu mảng toàn bộ các controls trong form arena
+                                var labelControls = new[] { TimeMe, TimeEnemy };
                            
-                            var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, ReadyBtn };
-                            var pictureBoxControls = new[]
-                            {
-                                MiddlePictureBox,
-                                AvatarPlayer,
-                                Enemy,
-                                setting,
-                                imojiButon,
-                                ClockIcon,
-                                clock1,
-                                Card1,
-                                Card2,
-                                Card3,
-                                Card4,
-                                Card5,
-                                Card6,
-                            };
-                            foreach (var control in IsPlayControls)
+                                var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton};
+                                var pictureBoxControls = new[]
+                                {
+                                    MiddlePictureBox,
+                                    AvatarPlayer,
+                                    Enemy,
+                                    setting,
+                                    imojiButon,
+                                    ClockIcon,
+                                    clock1,
+                                    Card1,
+                                    Card2,
+                                    Card3,
+                                    Card4,
+                                    Card5,
+                                    Card6,
+                                };
+                                foreach (var control in IsPlayControls)
                                 {
                                     control.BackColor = Color.White;
                                 }
@@ -778,26 +779,44 @@ namespace UNO
                                     {
                                         control.Visible = false;
                                     }
-                                //show toàn bộ các controls còn lại
-                                foreach (var control in pictureBoxControls)
-                                {
-                                    control.Visible = true;
+                                    // Fix for CS0119: 'Action' is a type, which is not valid in the given context
+                                    // The issue is caused by an incorrect cast syntax. The correct syntax is to cast to `Action` without parentheses.
+
+                                    this.Invoke((Action)(() =>
+                                    {
+                                        // Your code here
+                                        // Example: Update UI elements
+                                        foreach (var control in pictureBoxControls)
+                                        {
+                                            control.Visible = true;
+                                        }
+                                        foreach (var control in buttonControls)
+                                        {
+                                            control.Visible = true;
+                                        }
+                                        foreach (var control in labelControls)
+                                        {
+                                            control.Visible = true;
+                                        }
+                                    }));
+                                    
+                                    
+
                                 }
-                                foreach (var control in buttonControls)
-                                {
-                                    control.Visible = true;
-                                }
-                                foreach (var control in labelControls)
-                                {
-                                    control.Visible = true;
-                                }
-                            }
+                                
+                            
                               
                             }
-                            else
+                            else if (msg.StartsWith("CardTop: "))
                             {
-                                MessageBox.Show("Lỗi không xác định!");
-                            }
+                            // Lấy thông tin lá bài ở giữa  
+                            
+                            CardTop = msg.Split(":")[1].Trim();
+                            
+                            MiddlePictureBox.Image = imageCards[CardTop];
+                            MiddlePictureBox.Tag = CardTop;
+                        }
+                       
                         }
                         else
                         {
@@ -815,9 +834,10 @@ namespace UNO
         {
             try
             {
+                ReadyBtn.Visible = false;
                 byte[] buffer = Encoding.UTF8.GetBytes($"Ready: {Room.Text.Trim()}");
                 await stream.WriteAsync(buffer, 0, buffer.Length); // Gửi thông báo "Ready" đến server
-                ReadyBtn.Visible = false;
+              
             }
             catch (Exception ex)
             {
