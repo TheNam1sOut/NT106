@@ -38,6 +38,7 @@ namespace UNO
         private char currentColor;       // 'R','G','B','Y' hoặc 'W' (wild)
         private string currentValue;     // "0"-"9", "C","D","P", "DD","DP"
         private bool isPlayerTurn = true; // true: đến lượt client, false: đối thủ (sau này dùng mạng)
+        private int myPlayerId;
 
 
         /* Một map lưu tất cả hình ảnh lá bài và key để truy xuất các phần tử đó
@@ -389,6 +390,8 @@ namespace UNO
         }
         private void PlayCard(string cardName, PictureBox pb)
         {
+            string message;
+
             // 1. Xoá khỏi tay
             playerHand.Remove(cardName);
             // 2. Update UI: xoá pictureBox hoặc đổi sang lá úp
@@ -401,6 +404,8 @@ namespace UNO
                 char chosen = PromptForColor(); // 'R','G','B','Y'
                 currentColor = chosen;
                 currentValue = cardName;
+                // Gửi màu đã chọn kèm lá bài
+                message = $"PlayCard: {cardName}|{chosen}\n";
             }
             else
             {
@@ -408,8 +413,10 @@ namespace UNO
                 currentMiddleCard = cardName;
                 currentColor = cardName[0];
                 currentValue = cardName.Substring(1);
+                message = $"PlayCard: {cardName}\n";
             }
-
+            byte[] buffer = Encoding.UTF8.GetBytes(message);
+            stream.Write(buffer, 0, buffer.Length);
             MiddlePictureBox.Image = imageCards[cardName];
             MiddlePictureBox.Tag = cardName;
 
@@ -853,14 +860,18 @@ namespace UNO
                     }
                     else if (msg.StartsWith("CardTop: "))
                     {
-                        // Lấy thông tin lá bài ở giữa  
-
-                        CardTop = msg.Substring("CardTop: ".Length).Trim();
+                        string[] parts = msg.Substring("CardTop: ".Length).Split('|');
+                        string cardName = parts[0].Trim();
+                        char color = (cardName == "DD" || cardName == "DP") ? parts[1][0] : cardName[0];
+                        string value = (cardName == "DD" || cardName == "DP") ? cardName : cardName.Substring(1);
 
                         this.Invoke((Action)(() =>
                         {
-                            MiddlePictureBox.Image = imageCards[CardTop];
-                            MiddlePictureBox.Tag = CardTop;
+                            MiddlePictureBox.Image = imageCards[cardName];
+                            MiddlePictureBox.Tag = cardName;
+                            currentMiddleCard = cardName;
+                            currentColor = color;
+                            currentValue = value;
                         }));
                     }
                     //handling draw card request
@@ -874,6 +885,38 @@ namespace UNO
                             
                         }
                         DisplayFirstSixCards();
+                    }
+                    else if (msg.StartsWith("Turn: "))
+                    {
+                        int currentTurn = int.Parse(msg.Substring("Turn: ".Length).Trim());
+                        // Giả sử client biết ID của mình trong phòng (lưu khi tham gia phòng)
+                        this.Invoke((Action)(() =>
+                        {
+                            // So sánh ID lượt với ID của client
+                            isPlayerTurn = (myPlayerId == currentTurn);
+
+                            // Ví dụ: Đổi màu UI để hiển th lượt
+                            if (isPlayerTurn)
+                            {
+                                this.BackColor = Color.LightGreen; // Highlight khi đến lượt
+                            }
+                            else
+                            {
+                                this.BackColor = SystemColors.Control; // Reset màu
+                            }
+                        }));
+                    }
+                    else if (msg.StartsWith("Room: "))
+                    {
+                        string roomId = msg.Substring("Room: ".Length).Trim();
+                        // Lưu ID phòng (nếu cần)
+                    }
+                    else if (msg.StartsWith("YourId: "))
+                    {
+                        int myId = int.Parse(msg.Substring("YourId: ".Length).Trim());
+                        myPlayerId = myId;
+                        Console.WriteLine($"My Player ID: {myPlayerId}");
+                        // Lưu myId vào biến để sử dụng khi xử lý lượt
                     }
                     //update draw pile and discard pile
                     //else if (msg.StartsWith("Dataqueue: "))

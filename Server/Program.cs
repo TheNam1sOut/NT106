@@ -153,7 +153,10 @@ public class Server
                             string status = $"{room.countrd[1]},{room.countrd[2]}";
                             byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
                             acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
+                            string sendIdMessage = $"YourId: 1\n"; // Gửi ID cho player 1
+                            acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
                             break;
+
                         }
                         //tìm thấy phòng trống thông tin người chơi thứ hai
                         else if (room.player[2].Item1 == string.Empty)
@@ -170,6 +173,8 @@ public class Server
                             string status = $"{room.countrd[1]},{room.countrd[2]}";
                             byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
                             acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
+                            string sendIdMessage = $"YourId: 2\n"; // Gửi ID cho player 2
+                            acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
                             break;
                         }
 
@@ -181,6 +186,9 @@ public class Server
                         Room newRoom = new Room(roomCount);
                         newRoom.player[1] = (username, acceptedClient);
                         newRoom.ClientId[acceptedClient] = 1;
+                        string sendIdMessage = $"YourId: {newRoom.ClientId[acceptedClient]}\n";
+                        byte[] idData = Encoding.UTF8.GetBytes(sendIdMessage);
+                        acceptedClient.Send(idData);
                         roomList.Add(newRoom);
                         checkRoomInfo = $"Player {username} has joined in room {newRoom.id}";
                         Console.WriteLine(checkRoomInfo);
@@ -221,6 +229,46 @@ public class Server
                     }
                     Console.WriteLine("ready");
                 }
+                else if (message.StartsWith("PlayCard: "))
+                {
+                    Room room = FindRoombyClientID(acceptedClient);
+                    if (room != null)
+                    {
+                        int playerId = room.ClientId[acceptedClient];
+                        if (playerId != room.currentTurn)
+                        {
+                            // Không phải lượt của người chơi này
+                            return;
+                        }
+
+                        string[] parts = message.Substring("PlayCard: ".Length).Split('|');
+                        string cardName = parts[0].Trim();
+                        char chosenColor = (parts.Length > 1) ? parts[1][0] : cardName[0];
+
+                        // Thêm vào discard pile và cập nhật trạng thái
+                        room.Dataqueue1.Enqueue(cardName);
+                        string cardTopMsg = $"CardTop: {cardName}";
+                        if (cardName == "DD" || cardName == "DP")
+                            cardTopMsg += $"|{chosenColor}";
+                        // Chuyển lượt
+
+
+                        foreach (var sock in room.ClientId.Keys)
+                        {
+                            byte[] data = Encoding.UTF8.GetBytes(cardTopMsg + "\n");
+                            sock.Send(data, 0, data.Length, SocketFlags.None);
+                        }
+                        room.currentTurn = (playerId == 1) ? 2 : 1;
+
+                        // Gửi thông báo lượt mới đến cả hai client
+                        string turnMessage = $"Turn: {room.currentTurn}\n";
+                        foreach (var sock in room.ClientId.Keys)
+                        {
+                            byte[] data = Encoding.UTF8.GetBytes(turnMessage);
+                            sock.Send(data, 0, data.Length, SocketFlags.None);
+                        }
+                    }
+                }
                 //else if (message.StartsWith("New Deck: "))
                 //{
                 //    Room room = FindRoombyClientID(acceptedClient);
@@ -247,9 +295,10 @@ public class Server
     private class Room
     {
         //thêm constructor tùy chỉnh sau
-
+        public int currentTurn;
         public Room(int id)
         {
+            currentTurn = 1;
             this.id = id;
             player.Add(1, (string.Empty, null));
             player.Add(2, (string.Empty, null));
