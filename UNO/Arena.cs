@@ -37,8 +37,9 @@ namespace UNO
         private string currentMiddleCard;
         private char currentColor;       // 'R','G','B','Y' hoặc 'W' (wild)
         private string currentValue;     // "0"-"9", "C","D","P", "DD","DP"
-        private bool isPlayerTurn = true; // true: đến lượt client, false: đối thủ (sau này dùng mạng)
+        private bool isPlayerTurn; // true: đến lượt client, false: đối thủ (sau này dùng mạng)
         private int myPlayerId;
+        private int pendingDraw = 0;
 
 
         /* Một map lưu tất cả hình ảnh lá bài và key để truy xuất các phần tử đó
@@ -76,6 +77,7 @@ namespace UNO
             deck = imageCards.Keys.ToList();
             ShuffleDeck();
         }
+        
         private void InitializeMiddleCard()
         {
             DisplayMiddleCard(); // gọi ngay sau LoadCards(), trước DisplayFirstSixCards()
@@ -197,81 +199,31 @@ namespace UNO
         //Hàm kiểm tra tính hợp lệ của lá bài khi nhấn vào, nếu hợp lệ thì khi nhấn lần nữa sẽ chơi lá đó
         private void drawBtn_Click(object sender, EventArgs e) { }
 
+        //helper function 
+        private void RefillDeckFromDiscard()
+        {
+            // Giữ lại lá trên cùng
+            var top = discardDeck.Last();
+            discardDeck.RemoveAt(discardDeck.Count - 1);
+
+            ShuffleDiscardDeck();
+            deck.AddRange(discardDeck);
+            discardDeck.Clear();
+            discardDeck.Add(top);
+            ShuffleDeck();
+        }
         // Hàm xử lí yêu cầu rút thêm lá khi người dùng nhấn nút Draw
         private async Task DrawCards(int count)
         {
-
-            for (int i = 0; i < count; i++)
-            {
-                if (deck.Count > 0)
-                {
-                    string card = deck[0];
-                    playerHand.Add(card);
-                    deck.RemoveAt(0);
-
-                    //each time the user draws, sends the update to the server
-                    string message = "Drawn\n";
-                    byte[] buffer = Encoding.UTF8.GetBytes(message);
-                    await stream.WriteAsync(buffer, 0, buffer.Length);
-                }
-                else
-                {
-                    //tron lai chong bai bo va bo vao chong bai chinh
-                    ShuffleDiscardDeck();
-                    foreach (string tmpCard in discardDeck)
-                    {
-                        int index = deck.Count;
-                        deck[index] = tmpCard;
-                    }
-                    discardDeck.Clear();
-
-                    //thao tac nhu tren
-                    string card = deck[0];
-                    playerHand.Add(card);
-                    deck.RemoveAt(0);
-
-                    //gui chong bai da thay doi den server
-                    string message = "New Deck: ";
-                    string drawPile = string.Join(',', deck);
-                    foreach (string tmpCard in deck)
-                    {
-                        message += tmpCard + drawPile;
-                    }
-                    message += '\n';
-                    byte[] buffer = Encoding.UTF8.GetBytes(message);
-                    await stream.WriteAsync(buffer, 0, buffer.Length);
-                }
-            }
-
-            // nhan voi server la da rut het so luong can thiet
-            string messageDone = "Done\n";
-            byte[] buffer1 = Encoding.UTF8.GetBytes(messageDone);
-            await stream.WriteAsync(buffer1, 0, buffer1.Length);
-            // Cập nhật lại 6 lá đang hiển thị
-            UpdateSixCards();
+            // Chỉ gửi 1 yêu cầu "DrawCard" mỗi lần
+            var msg = Encoding.UTF8.GetBytes("DrawCard\n");
+            await stream.WriteAsync(msg, 0, msg.Length);
         }
 
 
 
         //Hàm sắp xếp lại danh sách bài người chơi
         private void sortBtn_Click(object sender, EventArgs e) { }
-        public Arena()
-        {
-            InitializeComponent();
-            InitializeCustomComponents();
-            InitializeEmojiPanel();
-            originalImageCard = new Bitmap(Properties.Resources.pngtree_uno_card_png_image_9101654);
-            imojiButon.Cursor = Cursors.Hand;
-            imojiButon.Click += pictureBox1_Click;
-            imojiButon.MouseEnter += pictureBox1_MouseEnter;
-            imojiButon.MouseLeave += pictureBox1_MouseLeave;
-            setting.MouseDown += setting_MouseDown;
-            setting.MouseUp += setting_MouseUp;
-
-            //định nghĩa các hàm khi vào trận
-            LoadCards();
-            this.Shown += Arena_Shown;
-        }
 
         public Arena(string playerName, TcpClient playerSocket, string roomName)
         {
@@ -286,9 +238,13 @@ namespace UNO
             setting.MouseDown += setting_MouseDown;
             setting.MouseUp += setting_MouseUp;
             Room.Text += " " + roomName;
-            this.TcpClient=playerSocket;
+ 
+
+            this.TcpClient = playerSocket;
             //định nghĩa các hàm khi vào trận
             LoadCards();
+
+            
             this.Shown += Arena_Shown;
         }
 
@@ -299,7 +255,7 @@ namespace UNO
                 pictureBox.Image = imageCards[cardName];
                 pictureBox.Tag = cardName;      // rất quan trọng để lấy lại key khi click
             }));
-            
+
         }
         private void setting_MouseDown(object sender, MouseEventArgs e)
         {
@@ -347,6 +303,7 @@ namespace UNO
 
         private void PlayerCard_Click(object sender, EventArgs e)
         {
+            ClearPendingHighlight();
             var pb = sender as PictureBox;
             if (pb == null || pb.Tag == null) return;
 
@@ -369,6 +326,7 @@ namespace UNO
                 }
                 pendingCard = cardName;
                 pb.BorderStyle = BorderStyle.Fixed3D;  // highlight
+                pb.BackColor = Color.Yellow; // Thêm màu nền để dễ nhận biết
                 return;
             }
 
@@ -379,21 +337,24 @@ namespace UNO
                 ClearPendingHighlight();
                 pendingCard = cardName;
                 pb.BorderStyle = BorderStyle.Fixed3D;
+                pb.BackColor = Color.Yellow;
                 return;
             }
 
             // Xử lý đánh
             pb.BorderStyle = BorderStyle.None;
             ClearPendingHighlight();  // xoá highlight
+            pb.BackColor = Color.Transparent;
             PlayCard(cardName, pb);
             pendingCard = null;
         }
         private void PlayCard(string cardName, PictureBox pb)
         {
             string message;
-
+            char newColor = currentColor;
             // 1. Xoá khỏi tay
             playerHand.Remove(cardName);
+            discardDeck.Add(cardName);
             // 2. Update UI: xoá pictureBox hoặc đổi sang lá úp
             pb.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
             pb.Tag = null;
@@ -401,27 +362,29 @@ namespace UNO
             // 3. Nếu là đổi màu (DD hoặc DP), hỏi chọn màu mới
             if (cardName == "DD" || cardName == "DP")
             {
-                char chosen = PromptForColor(); // 'R','G','B','Y'
-                currentColor = chosen;
-                currentValue = cardName;
-                // Gửi màu đã chọn kèm lá bài
-                message = $"PlayCard: {cardName}|{chosen}\n";
+                newColor = PromptForColor();
+                message = $"PlayCard: {cardName}|{newColor}\n";
+            }
+            else if (cardName.EndsWith("P"))
+            {
+                message = $"PlayCard: {cardName}|{currentColor}\n";
             }
             else
             {
-                // cập nhật trạng thái lá giữa
-                currentMiddleCard = cardName;
-                currentColor = cardName[0];
-                currentValue = cardName.Substring(1);
                 message = $"PlayCard: {cardName}\n";
             }
+            // Cập nhật trạng thái
+            currentMiddleCard = cardName;
+            currentColor = newColor;
+            currentValue = cardName.EndsWith("P") ? "P" : cardName.Substring(1);
+
+            // Gửi message
             byte[] buffer = Encoding.UTF8.GetBytes(message);
             stream.Write(buffer, 0, buffer.Length);
+
+            // Update UI
             MiddlePictureBox.Image = imageCards[cardName];
             MiddlePictureBox.Tag = cardName;
-
-            // 4. Chuyển lượt
-            isPlayerTurn = false;
             // TODO: gửi trạng thái mạng cho đối thủ hoặc gọi hàm xử lý lượt đối thủ
         }
         private char PromptForColor()
@@ -444,22 +407,21 @@ namespace UNO
                 return f.Tag != null ? (char)f.Tag : 'R';
             }
         }
-        private bool IsValidMove(string cardName)
+        private bool IsValidMove(string card)
         {
-            // Wild (DD hoặc DP) luôn hợp lệ
-            if (cardName == "DD" || cardName == "DP") return true;
+            // Lấy màu và giá trị HIỆN TẠI của lá bài giữa bàn
+            char currentMiddleColor = currentMiddleCard[0];
+            string currentMiddleValue = currentMiddleCard.Substring(1);
 
-            // Lấy màu & giá trị
-            char color = cardName[0];
-            string value = cardName.Substring(1);
+            // Xử lý lá bài Wild/Wild Draw Four
+            if (card == "DD" || card == "DP")
+                return true; // Luôn hợp lệ, nhưng cần chọn màu sau khi đánh
 
-            // Theo quy tắc UNO: hợp lệ khi màu trùng hoặc số/symbol trùng
-            if (color == currentColor) return true;
-            if (value == currentValue) return true;
-
-            return false;
+            // Kiểm tra màu hoặc giá trị khớp
+            char cardColor = card[0];
+            string cardValue = card.Substring(1);
+            return (cardColor == currentMiddleColor || cardValue == currentMiddleValue);
         }
-
         private Bitmap AdjustBrightness(Bitmap image, float brightness)
         {
             Bitmap adjustedImage = new Bitmap(image.Width, image.Height);
@@ -626,7 +588,7 @@ namespace UNO
             }
         }
 
-        public  async void Arena_Shown(object sender, EventArgs e)
+        public async void Arena_Shown(object sender, EventArgs e)
         {
             try
             {
@@ -690,26 +652,58 @@ namespace UNO
 
             TimeMe.Text = counter.ToString();
         }
-
-        private void button1_Click(object sender, EventArgs e)
+        private TaskCompletionSource<bool> turnTcs;
+        private async void button1_Click(object sender, EventArgs e)
         {
-            // Dừng và hủy timer cũ nếu đang chạy
-            DrawCards(1);
-            if (aTimer != null)
+            if (!isPlayerTurn)
             {
-                aTimer.Stop();
-                aTimer.Dispose();
+                MessageBox.Show("Chưa đến lượt bạn!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
 
-            // Reset giá trị đếm
-            counter = 10;
-            TimeMe.Text = counter.ToString();
+            await DrawCards(1); // Luôn rút 1 lá
 
-            // Tạo timer mới
-            aTimer = new System.Windows.Forms.Timer();
-            aTimer.Tick += aTimer_Tick;
-            aTimer.Interval = 1000;
-            aTimer.Start();
+            // Kiểm tra lá vừa rút có thể đánh không
+            if (playerHand.Count > 0)
+            {
+                string lastDrawnCard = playerHand.Last();
+                bool canPlay = IsValidMove(lastDrawnCard);
+
+                if (canPlay)
+                {
+                    // Hỏi người chơi có muốn đánh lá này không
+                    DialogResult result = MessageBox.Show(
+                        $"Bạn vừa rút lá {lastDrawnCard}. Đánh ngay?",
+                        "Đánh lá",
+                        MessageBoxButtons.YesNo
+                    );
+
+                    if (result == DialogResult.Yes)
+                    {
+                        // Tìm PictureBox tương ứng và đánh lá
+                        PictureBox pb = FindPictureBoxForCard(lastDrawnCard);
+                        if (pb != null)
+                        {
+                            PlayCard(lastDrawnCard, pb);
+                            pendingDraw = 0; // Reset pendingDraw nếu đánh thành công
+                        }
+                    }
+                }
+            }
+
+            // Cập nhật UI
+            UpdateSixCards();
+        }
+
+        // Hàm tìm PictureBox chứa lá bài cụ thể
+        private PictureBox FindPictureBoxForCard(string cardName)
+        {
+            foreach (Control control in this.Controls)
+            {
+                if (control is PictureBox pb && pb.Tag?.ToString() == cardName)
+                    return pb;
+            }
+            return null;
         }
 
         private void Card5_Click(object sender, EventArgs e)
@@ -741,6 +735,7 @@ namespace UNO
                 if (pb != null)
                 {
                     pb.BorderStyle = BorderStyle.None;
+                    pb.BackColor = Color.Transparent; // Reset màu nền
                 }
             }
         }
@@ -819,7 +814,7 @@ namespace UNO
                         //}
                         if (IdCards.All(id => id.Trim() == "1"))
                         {
-                            
+
                             // Fix for CS0119: 'Action' is a type, which is not valid in the given context
                             // The issue is caused by an incorrect cast syntax. The correct syntax is to cast to `Action` without parentheses.
 
@@ -844,7 +839,7 @@ namespace UNO
                                     control.Visible = true;
                                 }
                             }));
-                        } 
+                        }
                         else
                         {
                             this.Invoke((Action)(() =>
@@ -860,51 +855,33 @@ namespace UNO
                     }
                     else if (msg.StartsWith("CardTop: "))
                     {
-                        string[] parts = msg.Substring("CardTop: ".Length).Split('|');
-                        string cardName = parts[0].Trim();
-                        char color = (cardName == "DD" || cardName == "DP") ? parts[1][0] : cardName[0];
-                        string value = (cardName == "DD" || cardName == "DP") ? cardName : cardName.Substring(1);
-
-                        this.Invoke((Action)(() =>
-                        {
-                            MiddlePictureBox.Image = imageCards[cardName];
-                            MiddlePictureBox.Tag = cardName;
-                            currentMiddleCard = cardName;
-                            currentColor = color;
-                            currentValue = value;
-                        }));
+                        var p = msg.Substring(9).Split('|');
+                        currentMiddleCard = p[0].Trim();
+                        currentColor = p.Length > 1 ? p[1][0] : p[0][0];
+                        MiddlePictureBox.Image = imageCards[currentMiddleCard];
                     }
                     //handling draw card request
                     else if (msg.StartsWith("InitialHand: "))
                     {
                         //get the draw amount
                         string[] cards = msg.Substring("InitialHand: ".Length).Split(',');
-                        foreach(string card in cards)
+                        playerHand.Clear();
+                        foreach (string card in cards)
                         {
-                            playerHand.Add(card);
-                            
+                            playerHand.Add(card.Trim());
                         }
-                        DisplayFirstSixCards();
+                        this.Invoke((Action)(() => DisplayFirstSixCards()));
+                    }
+                    else if (msg.StartsWith("PendingDraw: "))
+                    {
+                        pendingDraw = int.Parse(msg.Substring("PendingDraw: ".Length).Trim());
+                        DrawButton.Enabled = isPlayerTurn;
                     }
                     else if (msg.StartsWith("Turn: "))
                     {
-                        int currentTurn = int.Parse(msg.Substring("Turn: ".Length).Trim());
-                        // Giả sử client biết ID của mình trong phòng (lưu khi tham gia phòng)
-                        this.Invoke((Action)(() =>
-                        {
-                            // So sánh ID lượt với ID của client
-                            isPlayerTurn = (myPlayerId == currentTurn);
-
-                            // Ví dụ: Đổi màu UI để hiển th lượt
-                            if (isPlayerTurn)
-                            {
-                                this.BackColor = Color.LightGreen; // Highlight khi đến lượt
-                            }
-                            else
-                            {
-                                this.BackColor = SystemColors.Control; // Reset màu
-                            }
-                        }));
+                        int id = int.Parse(msg.Substring(6));
+                        isPlayerTurn = (id == myPlayerId);
+                        DrawButton.Enabled = isPlayerTurn;
                     }
                     else if (msg.StartsWith("Room: "))
                     {
@@ -918,28 +895,51 @@ namespace UNO
                         Console.WriteLine($"My Player ID: {myPlayerId}");
                         // Lưu myId vào biến để sử dụng khi xử lý lượt
                     }
-                    //update draw pile and discard pile
-                    //else if (msg.StartsWith("Dataqueue: "))
-                    //{
-                    //    string[] parts = msg.Substring("Dataqueue: ".Length).Split('|');
-                    //    if (parts.Length == 2)
-                    //    {
-                    //        string[] dataQueue = parts[0].Split(',');
-                    //        string[] dataQueue1 = parts[1].Split(',');
+                    else if (msg.StartsWith("DrawCard: "))
+                    {
+                        string card = msg.Substring(10).Trim();
+                        playerHand.Add(card);
+                        UpdateSixCards();
 
-                    //        deck.Clear();
-                    //        foreach (string card in dataQueue)
-                    //        {
-                    //            deck.Add(card.Trim());
-                    //        }
-                    //        discardDeck.Clear();
-                    //        foreach (string card in dataQueue1)
-                    //        {
-                    //            discardDeck.Add(card.Trim());
-                    //        }
-                    //    }
-                    //}
+                        // Tự động kiểm tra lá vừa rút có thể đánh không
+                        bool canPlay = IsValidMove(card);
+                        if (canPlay)
+                        {
+                            // Tự động highlight lá bài
+                            PictureBox pb = FindPictureBoxForCard(card);
+                            if (pb != null)
+                            {
+                                pb.BorderStyle = BorderStyle.Fixed3D;
+                                pb.BackColor = Color.Yellow;
+                            }
+                        }
+                    }
                 }
+
+
+                //update draw pile and discard pile
+                //else if (msg.StartsWith("Dataqueue: "))
+                //{
+                //    string[] parts = msg.Substring("Dataqueue: ".Length).Split('|');
+                //    if (parts.Length == 2)
+                //    {
+                //        string[] dataQueue = parts[0].Split(',');
+                //        string[] dataQueue1 = parts[1].Split(',');
+
+                //        deck.Clear();
+                //        foreach (string card in dataQueue)
+                //        {
+                //            deck.Add(card.Trim());
+                //        }
+                //        discardDeck.Clear();
+                //        foreach (string card in dataQueue1)
+                //        {
+                //            discardDeck.Add(card.Trim());
+                //        }
+                //    }
+                //}
+
+
             }
             catch (Exception ex)
             {
@@ -956,14 +956,17 @@ namespace UNO
                 ReadyBtn.Visible = false;
                 byte[] buffer = Encoding.UTF8.GetBytes($"Ready: {Room.Text.Trim()}");
                 await stream.WriteAsync(buffer, 0, buffer.Length); // Gửi thông báo "Ready" đến server
-              
+
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
+        private bool HasPlayableCard()
+        {
+            return playerHand.Any(card => IsValidMove(card));
+        }
         private void Room_TextChanged(object sender, EventArgs e)
         {
 

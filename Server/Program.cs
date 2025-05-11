@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -20,46 +19,96 @@ public class Server
 
     //lưu trữ danh sách phòng để chứa người chơi
     List<Room> roomList = new List<Room>();
+    private void PlayCardAction(Room room, int playerId, string cardName, char chosenColor)
+    {
+        // 1. Cập nhật màu/chữ số hiện tại
+        room.pendingWildColor = chosenColor;
+        room.currentValue = (cardName == "DD" || cardName == "DP")
+                            ? cardName
+                            : cardName.Substring(1);
+
+        // 2. Xử lý +2/+4
+        if (cardName == "DP")
+        {
+            room.pendingDrawCards += 4;
+            room.currentTurn = Opponent(playerId);
+        }
+        else if (cardName.EndsWith("P"))
+        {
+            room.pendingDrawCards += 2;
+            room.currentTurn = Opponent(playerId);
+        }
+        // 3. Skip/Reverse
+        else if (cardName.EndsWith("C") || cardName.EndsWith("D"))
+        {
+            // 2 player: Reverse = Skip
+            room.currentTurn = Opponent(playerId);
+        }
+        // 4. Lá thường
+        else
+        {
+            room.pendingDrawCards = 0;
+            room.currentTurn = Opponent(playerId);
+        }
+
+        // 5. Gửi Turn/PendingDraw cho client
+        Broadcast(room, $"Turn: {room.currentTurn}\n");
+        Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
+
+        // 6. Đưa bài vào discard and xóa khỏi tay player
+        room.Dataqueue1.Enqueue(cardName);
+        room.playerHands[playerId].Remove(cardName);
+
+        // 7. Gửi CardTop mới
+        Broadcast(room, $"CardTop: {cardName}|{chosenColor}\n");
+    }
+
+    private int Opponent(int playerId) => playerId == 1 ? 2 : 1;
+
+    private void RefillDrawPile(Room room)
+    {
+        if (room.Dataqueue1.Count <= 1) return;  // only keep top
+        var top = room.Dataqueue1.Dequeue();
+        // move rest to draw pile
+        while (room.Dataqueue1.Count > 0)
+            room.Dataqueue.Enqueue(room.Dataqueue1.Dequeue());
+        ShuffleQueue(room.Dataqueue);
+        room.Dataqueue1.Enqueue(top);
+        // broadcast new top
+        SenUnoCardTop(room, "");
+    }
+    /// <summary>
+    /// Hoán vị ngẫu nhiên các phần tử trong queue.
+    /// </summary>
+    private void ShuffleQueue<T>(Queue<T> queue)
+    {
+        // Chuyển queue thành list để dễ hoán vị
+        var list = queue.ToList();
+        queue.Clear();  // Xóa hết phần tử cũ
+
+        var rnd = new Random();
+        // Lấy ngẫu nhiên từng phần tử từ list rồi enqueue trở lại
+        while (list.Count > 0)
+        {
+            int idx = rnd.Next(list.Count);
+            queue.Enqueue(list[idx]);
+            list.RemoveAt(idx);
+        }
+    }
+    private void SenUnoCardTop(Room room, string unused)
+    {
+        if (room.Dataqueue1.Count == 0) return;
+        var top = room.Dataqueue1.Peek();
+        Console.WriteLine($"[DEBUG][CardTop] Card: {top}, Màu hiện tại: {room.pendingWildColor}");
+        foreach (var sock in room.ClientId.Keys)
+            sock.Send(Encoding.UTF8.GetBytes($"CardTop: {top}|{room.pendingWildColor}\n"));
+    }
 
     public Server()
     {
 
     }
-    private void SenUnoCardTop(Room room, string cards)
-    {
-        Console.WriteLine(cards);
-        if (string.IsNullOrEmpty(cards))
-        {
-            if (room.Dataqueue.Count > 0)
-            {
-                while (room.Dataqueue.Peek() == "DD" || room.Dataqueue.Peek() == "DP")
-                {
-                    string cardDiscard = room.Dataqueue.Peek();
-                    room.Dataqueue.Dequeue();
-                    room.Dataqueue.Enqueue(cardDiscard);
-                }
-                string card = room.Dataqueue.Dequeue();
-                string msg = $"CardTop: {card}\n";
-                foreach (var sock in room.ClientId.Keys)
-                {
-                    try
-                    {
-                        byte[] data = Encoding.UTF8.GetBytes(msg);
-                        sock.Send(data, 0, data.Length, SocketFlags.None);
-                    }
-                    catch (SocketException ex)
-                    {
-                        Console.WriteLine($"Error sending message to client: {ex.Message}");
-                    }
-                }
-            }
-            else
-            {
-               
-            }
-            
-        }
-    }
+
     //private void SendInitialQueues(Room room)
     //{
     //    // saves dataqueue and dataqueue1 as strings
@@ -89,20 +138,50 @@ public class Server
     {
         try
         {
+            if (room.Dataqueue.Count > 0)
+            {
+                string topCard;
+                do
+                {
+                    topCard = room.Dataqueue.Dequeue();
+                    if (topCard == "DD" || topCard == "DP") room.Dataqueue.Enqueue(topCard);
+                } while (topCard == "DD" || topCard == "DP");
+                room.Dataqueue1.Enqueue(topCard);
+                room.currentValue = topCard.Substring(1);
+                room.pendingWildColor = topCard[0];
+            }
+
             foreach (var sock in room.ClientId.Keys)
             {
+                int playerId = room.ClientId[sock];
                 List<string> hand = new List<string>();
                 for (int i = 0; i < 6; i++)
                     hand.Add(room.Dataqueue.Dequeue());
+                if (!room.playerHands.ContainsKey(playerId))
+                    room.playerHands.Add(playerId, hand);
+                else room.playerHands[playerId] = hand;
                 string handMsg = "InitialHand: " + string.Join(",", hand) + "\n";
                 var buf = Encoding.UTF8.GetBytes(handMsg);
                 sock.Send(buf);
             }
+            SenUnoCardTop(room, "");
+            Broadcast(room, $"PendingDraw: 0\n");
+
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
-        }   
+        }
+    }
+    private bool HasPlayableCards(Room room, int playerId)
+    {
+        if (!room.playerHands.ContainsKey(playerId)) return false;
+        foreach (string card in room.playerHands[playerId])
+        {
+            if (IsPlayable(card, room))
+                return true;
+        }
+        return false;
     }
     private void HandleClient(Socket acceptedClient)
     {
@@ -218,13 +297,23 @@ public class Server
                         {
                             sock.Send(data, 0, data.Length, SocketFlags.None);
                         }
-                       
-                        if(room.rommbg==0 && room.sumcountrd==2 )
+
+                        if (room.rommbg == 0 && room.sumcountrd == 2)
                         {
                             Console.WriteLine(room.rommbg + room.sumcountrd);
                             room.rommbg = 1;
-                            SenUnoCardTop(room,"");
+                            foreach (var sock in room.ClientId.Keys)
+                            {
+                                int id = room.ClientId[sock];
+                                sock.Send(Encoding.UTF8.GetBytes($"YourId: {id}\n"));
+                            }
+
+                            Broadcast(room, $"Turn: {room.currentTurn}\n");
+                            Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
+                            SenUnoCardTop(room, "");
                             SendInitialHand(room);
+
+
                         }
                     }
                     Console.WriteLine("ready");
@@ -232,43 +321,58 @@ public class Server
                 else if (message.StartsWith("PlayCard: "))
                 {
                     Room room = FindRoombyClientID(acceptedClient);
-                    if (room != null)
-                    {
-                        int playerId = room.ClientId[acceptedClient];
-                        if (playerId != room.currentTurn)
-                        {
-                            // Không phải lượt của người chơi này
-                            return;
-                        }
+                    int playerId = room.ClientId[acceptedClient];
+                    var parts = message.Substring(10).Split('|');
+                    string card = parts[0];
+                    char color = parts.Length > 1 ? parts[1][0] : room.pendingWildColor;
+                    // enqueue discard
+                    room.Dataqueue1.Enqueue(card);
+                    // update wild color & currentValue
+                    room.pendingWildColor = (card == "DD" || card == "DP") ? color : card[0];
+                    room.currentValue = card.Length > 1 ? card.Substring(1) : card;
+                    // process +2/+4
+                    if (card == "DP") { room.pendingDrawCards += 4; }
+                    else if (card.EndsWith("P")) { room.pendingDrawCards += 2; }
+                    else room.pendingDrawCards = 0;
 
-                        string[] parts = message.Substring("PlayCard: ".Length).Split('|');
-                        string cardName = parts[0].Trim();
-                        char chosenColor = (parts.Length > 1) ? parts[1][0] : cardName[0];
+                    // next turn (skip on skip/reverse managed similarly)
+                    room.currentTurn = Opponent(playerId);
 
-                        // Thêm vào discard pile và cập nhật trạng thái
-                        room.Dataqueue1.Enqueue(cardName);
-                        string cardTopMsg = $"CardTop: {cardName}";
-                        if (cardName == "DD" || cardName == "DP")
-                            cardTopMsg += $"|{chosenColor}";
-                        // Chuyển lượt
-
-
-                        foreach (var sock in room.ClientId.Keys)
-                        {
-                            byte[] data = Encoding.UTF8.GetBytes(cardTopMsg + "\n");
-                            sock.Send(data, 0, data.Length, SocketFlags.None);
-                        }
-                        room.currentTurn = (playerId == 1) ? 2 : 1;
-
-                        // Gửi thông báo lượt mới đến cả hai client
-                        string turnMessage = $"Turn: {room.currentTurn}\n";
-                        foreach (var sock in room.ClientId.Keys)
-                        {
-                            byte[] data = Encoding.UTF8.GetBytes(turnMessage);
-                            sock.Send(data, 0, data.Length, SocketFlags.None);
-                        }
-                    }
+                    // send new top, turn, pending draw
+                    Console.WriteLine($"[DEBUG][PlayCard] - Giá trị hiện tại: {room.currentValue}");
+                    Console.WriteLine($"[DEBUG][PlayCard] - Lượt tiếp theo: {room.currentTurn}");
+                    Console.WriteLine($"[DEBUG][PlayCard] - Màu hiện tại: {room.pendingWildColor}");
+                    Console.WriteLine($"[DEBUG][PlayCard] - Số card pen : {room.pendingDrawCards}");
+                    Broadcast(room, $"CardTop: {card}|{room.pendingWildColor}\n");
+                    Broadcast(room, $"Turn: {room.currentTurn}\n");
+                    Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
                 }
+                else if (message.StartsWith("DrawCard"))
+                {
+                    var room = FindRoombyClientID(acceptedClient);
+                    int playerId = room.ClientId[acceptedClient];
+
+
+                        if (room.Dataqueue.Count == 0) RefillDrawPile(room);
+                    var drawnCard = room.Dataqueue.Dequeue();
+                    room.playerHands[playerId].Add(drawnCard);
+                    acceptedClient.Send(Encoding.UTF8.GetBytes($"DrawCard: {drawnCard}\n"));
+
+                    // send each card
+                    if (drawnCard.EndsWith("P"))
+                    {
+                        room.pendingDrawCards += (drawnCard == "DP") ? 4 : 2;
+                        Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
+                    }
+                    else
+                    {
+                        room.pendingDrawCards = 0;
+                        Broadcast(room, $"PendingDraw: 0\n");
+                    }
+                    // broadcast new top
+                }
+
+
                 //else if (message.StartsWith("New Deck: "))
                 //{
                 //    Room room = FindRoombyClientID(acceptedClient);
@@ -292,10 +396,32 @@ public class Server
         Console.WriteLine($"{username} has disconnected!");
     }
 
+    private void Broadcast(Room room, string msg)
+    {
+        var data = Encoding.UTF8.GetBytes(msg);
+        foreach (var sock in room.ClientId.Keys)
+            sock.Send(data);
+    }
+
+    private bool IsPlayable(string card, Room room)
+    {
+        char cardColor = (card == "DD" || card == "DP") ? room.pendingWildColor : card[0];
+        string cardValue = (card == "DD" || card == "DP") ? card : card.Substring(1);
+        // Kiểm tra theo màu hiện tại hoặc giá trị
+        return cardColor == room.pendingWildColor
+               || cardValue == room.currentValue
+               || card == "DD"
+               || card == "DP";
+    }
+
     private class Room
     {
         //thêm constructor tùy chỉnh sau
         public int currentTurn;
+        public int pendingDrawCards = 0; //stack card cần rút
+        public char pendingWildColor = 'W'; // Màu mặc định cho Wild
+        public string currentValue; // Giá trị bài hiện tại
+        public Dictionary<int, List<string>> playerHands = new Dictionary<int, List<string>>();
         public Room(int id)
         {
             currentTurn = 1;
@@ -334,27 +460,6 @@ public class Server
             // Shuffle the queue elements
             ShuffleQueue(Dataqueue);
         }
-        public Queue<string> ReadFileAndEnqueue(string filePath)
-        {
-            Queue<string> dataQueue = new Queue<string>();
-            using (StreamReader reader = new StreamReader(filePath))
-            {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    // Remove newline character and split data into elements
-                    string[] elements = line.Split(',');
-                    // Enqueue elements
-                    foreach (string element in elements)
-                    {
-                        dataQueue.Enqueue(element);
-                    }
-                }
-            }
-            return dataQueue;
-        }
-
-        // Method to shuffle queue elements
         public void ShuffleQueue(Queue<string> queue)
         {
             // Convert queue to list
@@ -378,9 +483,31 @@ public class Server
                 queue.Enqueue(element);
             }
         }
+        public Queue<string> ReadFileAndEnqueue(string filePath)
+        {
+            Queue<string> dataQueue = new Queue<string>();
+            using (StreamReader reader = new StreamReader(filePath))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    // Remove newline character and split data into elements
+                    string[] elements = line.Split(',');
+                    // Enqueue elements
+                    foreach (string element in elements)
+                    {
+                        dataQueue.Enqueue(element);
+                    }
+                }
+            }
+            return dataQueue;
+        }
+
+        // Method to shuffle queue elements
+
 
     }
-    
+
     public void ServerThread()
     {
         //lần lượt khởi tạo IPEndPoint và socket, và bind socket này với IPEndPoint của server
@@ -421,6 +548,7 @@ public class Server
     {
         return roomList.FirstOrDefault(room => room.ClientId.ContainsKey(ClientSocket));
     }
+
     public void StartServer()
     {
         serverThread = new Thread(ServerThread);
