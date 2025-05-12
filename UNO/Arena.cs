@@ -173,12 +173,12 @@ namespace UNO
             //reset ảnh toàn bộ 6 picturebox
             this.Invoke((Action)(() =>
             {
-                Card1.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
-                Card2.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
-                Card3.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
-                Card4.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
-                Card5.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
-                Card6.Image = Image.FromFile("..\\..\\..\\Resources\\pngtree-uno-card-png-image_9101654.png");
+                for (int i = 1; i <= 6; i++)
+                {
+                    var pb = this.Controls[$"Card{i}"] as PictureBox;
+                    pb.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
+                    pb.Tag = null;
+                }
             }));
 
             for (int i = firstIndex; i < firstIndex + 6; i++)
@@ -324,6 +324,7 @@ namespace UNO
                     MessageBox.Show("Bạn không thể đánh lá này!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
+                ClearPendingHighlight();
                 pendingCard = cardName;
                 pb.BorderStyle = BorderStyle.Fixed3D;  // highlight
                 pb.BackColor = Color.Yellow; // Thêm màu nền để dễ nhận biết
@@ -333,6 +334,11 @@ namespace UNO
             // Lần click hai: phải cùng lá với pending, thực sự đánh
             if (cardName != pendingCard)
             {
+                if (!IsValidMove(cardName))
+                {
+                    MessageBox.Show("Lá này không hợp lệ, vui lòng chọn lá khác hoặc nhấn Draw.", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
                 // bấm lá khác thì xóa highlight cũ và set lá mới
                 ClearPendingHighlight();
                 pendingCard = cardName;
@@ -409,18 +415,34 @@ namespace UNO
         }
         private bool IsValidMove(string card)
         {
-            // Lấy màu và giá trị HIỆN TẠI của lá bài giữa bàn
-            char currentMiddleColor = currentMiddleCard[0];
-            string currentMiddleValue = currentMiddleCard.Substring(1);
-
-            // Xử lý lá bài Wild/Wild Draw Four
-            if (card == "DD" || card == "DP")
-                return true; // Luôn hợp lệ, nhưng cần chọn màu sau khi đánh
-
-            // Kiểm tra màu hoặc giá trị khớp
+            char topColor = currentColor;
+            string topValue = currentValue;
             char cardColor = card[0];
             string cardValue = card.Substring(1);
-            return (cardColor == currentMiddleColor || cardValue == currentMiddleValue);
+
+            // Đang phạt
+            if (pendingDraw > 0)
+            {
+                if (topValue == "DP") // +4
+                {
+                    return card == "DP";
+                }
+                else if (topValue == "P") // +2
+                {
+                    return card.EndsWith("P") || card == "DP";
+                }
+            }
+
+            // Nếu lá trên cùng là Wild (DD)
+            if (topValue == "DD")
+            {
+                if (card == "DD" || card == "DP") return true;
+                return cardColor == topColor;
+            }
+
+            // Luật bình thường
+            if (card == "DD" || card == "DP") return true;
+            return (cardColor == topColor || cardValue == topValue);
         }
         private Bitmap AdjustBrightness(Bitmap image, float brightness)
         {
@@ -660,41 +682,51 @@ namespace UNO
                 MessageBox.Show("Chưa đến lượt bạn!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-
-            await DrawCards(1); // Luôn rút 1 lá
-
-            // Kiểm tra lá vừa rút có thể đánh không
-            if (playerHand.Count > 0)
+            if (pendingDraw == 0 && HasPlayableCard())
             {
-                string lastDrawnCard = playerHand.Last();
-                bool canPlay = IsValidMove(lastDrawnCard);
+                MessageBox.Show("Bạn có lá bài hợp lệ, khôn g thể rút thêm!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            // Nếu đang bị phạt
+            if (pendingDraw > 0)
+            {
 
-                if (canPlay)
+
+                // Kiểm tra trong tay có lá phạt hợp lệ không
+                bool hasPenaltyCard = playerHand.Any(card => IsValidMove(card));
+                // Thông báo số lá phạt còn lại
+                MessageBox.Show($"Bạn bị phạt rút {pendingDraw} lá!", "UNO – Phạt", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (hasPenaltyCard)
                 {
-                    // Hỏi người chơi có muốn đánh lá này không
-                    DialogResult result = MessageBox.Show(
-                        $"Bạn vừa rút lá {lastDrawnCard}. Đánh ngay?",
-                        "Đánh lá",
-                        MessageBoxButtons.YesNo
-                    );
-
-                    if (result == DialogResult.Yes)
-                    {
-                        // Tìm PictureBox tương ứng và đánh lá
-                        PictureBox pb = FindPictureBoxForCard(lastDrawnCard);
-                        if (pb != null)
-                        {
-                            PlayCard(lastDrawnCard, pb);
-                            pendingDraw = 0; // Reset pendingDraw nếu đánh thành công
-                        }
-                    }
+                    // Nếu có, cho phép người chơi chọn đánh (hoặc bấm Draw tiếp để từ chối đánh lá phạt)
+                    return;
+                }
+                else
+                {
+                    // Nếu không có lá phạt, rút 1 lá mỗi click
+                    await DrawCards(1);
+                    UpdateSixCards();  // Cập nhật UI
+                    return;
                 }
             }
 
-            // Cập nhật UI
+            // Trường hợp bình thường (không phạt): rút 1 lá mỗi click
+            await DrawCards(1);
             UpdateSixCards();
         }
 
+
+        // Helper kiểm tra lá bình thường (không tính pendingDraw)
+        private bool IsValidNormalMove(string card)
+        {
+            char topColor = currentColor;
+            string topValue = currentValue;
+            char cardColor = card[0];
+            string cardValue = card.Substring(1);
+
+            if (card == "DD" || card == "DP") return true;
+            return (cardColor == topColor || cardValue == topValue);
+        }
         // Hàm tìm PictureBox chứa lá bài cụ thể
         private PictureBox FindPictureBoxForCard(string cardName)
         {
@@ -857,7 +889,15 @@ namespace UNO
                     {
                         var p = msg.Substring(9).Split('|');
                         currentMiddleCard = p[0].Trim();
-                        currentColor = p.Length > 1 ? p[1][0] : p[0][0];
+                           // Cập nhật màu: nếu có wild chọn màu thì p[1], ngược lại lấy màu từ chữ cái đầu
+                        currentColor = p.Length > 1 ? p[1][0] : currentMiddleCard[0];
+
+                          // **QUAN TRỌNG**: Cập nhật giá trị (value) mới để cho phép đánh cùng value
+                          //   Wild: DD (chọn màu), DP (+4) giữ nguyên tên
+                          //   Các lá khác: substring từ index 1
+                        currentValue = (currentMiddleCard == "DD" || currentMiddleCard == "DP")
+                                          ? currentMiddleCard
+                                          : currentMiddleCard.Substring(1);
                         MiddlePictureBox.Image = imageCards[currentMiddleCard];
                     }
                     //handling draw card request
@@ -963,6 +1003,7 @@ namespace UNO
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        //helper check bài có thể đánh để ban draw 
         private bool HasPlayableCard()
         {
             return playerHand.Any(card => IsValidMove(card));
