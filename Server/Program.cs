@@ -3,6 +3,43 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using static System.Net.Mime.MediaTypeNames;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Data.SqlClient;
+
+var config = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())  // lấy thư mục hiện tại
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .Build();
+string connStr = config.GetConnectionString("MyDb");  // đọc chuỗi kết nối từ file
+using (var conn = new SqlConnection(connStr))
+{
+    try
+    {
+        conn.Open();
+        Console.WriteLine("✅ Kết nối SQL Server thành công!");
+        string sql = "SELECT * FROM Game";
+        using (var cmd = new SqlCommand(sql, conn))
+        {
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    int game_id = reader.GetInt32(0);           // cột 0 = Id
+                   
+                    int winner_id = reader.GetInt32(1);           // cột 2 = Age
+
+                    Console.WriteLine($"ID: {game_id}, Tuổi: {winner_id}");
+                }
+            }
+        }
+        // Chạy thử 1 truy vấn
+       
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("❌ Lỗi kết nối: " + ex.Message);
+    }
+}
 
 Server server = new Server();
 server.StartServer();
