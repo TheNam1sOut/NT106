@@ -56,50 +56,6 @@ public class Server
 
     //lưu trữ danh sách phòng để chứa người chơi
     List<Room> roomList = new List<Room>();
-    private void PlayCardAction(Room room, int playerId, string cardName, char chosenColor)
-    {
-        // 1. Cập nhật màu/chữ số hiện tại
-        room.pendingWildColor = chosenColor;
-        room.currentValue = (cardName == "DD" || cardName == "DP")
-                            ? cardName
-                            : cardName.Substring(1);
-
-        // 2. Xử lý +2/+4
-        if (cardName == "DP")
-        {
-            room.pendingDrawCards += 4;
-            room.currentTurn = Opponent(playerId);
-        }
-        else if (cardName.EndsWith("P"))
-        {
-            room.pendingDrawCards += 2;
-            room.currentTurn = Opponent(playerId);
-        }
-        // 3. Skip/Reverse
-        else if (cardName.EndsWith("C") || cardName.EndsWith("D"))
-        {
-            // 2 player: Reverse = Skip
-            room.currentTurn = Opponent(playerId);
-        }
-        // 4. Lá thường
-        else
-        {
-            room.pendingDrawCards = 0;
-            room.currentTurn = Opponent(playerId);
-        }
-
-        // 5. Gửi Turn/PendingDraw cho client
-        Broadcast(room, $"Turn: {room.currentTurn}\n");
-        Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
-
-        // 6. Đưa bài vào discard and xóa khỏi tay player
-        room.Dataqueue1.Enqueue(cardName);
-        room.playerHands[playerId].Remove(cardName);
-
-        // 7. Gửi CardTop mới
-        Broadcast(room, $"CardTop: {cardName}|{chosenColor}\n");
-    }
-
     private int Opponent(int playerId) => playerId == 1 ? 2 : 1;
 
     private void RefillDrawPile(Room room)
@@ -390,15 +346,15 @@ public class Server
                     int playerId = room.ClientId[acceptedClient];
 
 
-                        if (room.Dataqueue.Count == 0) RefillDrawPile(room);
+                    if (room.Dataqueue.Count == 0) RefillDrawPile(room);
+
                     var drawnCard = room.Dataqueue.Dequeue();
                     room.playerHands[playerId].Add(drawnCard);
                     acceptedClient.Send(Encoding.UTF8.GetBytes($"DrawCard: {drawnCard}\n"));
-
-                    // send each card
-                    if (drawnCard.EndsWith("P"))
+                    // Giảm số lá phạt nếu đang xử lý phạt
+                    if (room.pendingDrawCards > 0)
                     {
-                        room.pendingDrawCards += (drawnCard == "DP") ? 4 : 2;
+                        room.pendingDrawCards--;
                         Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
                     }
                     else
@@ -459,6 +415,8 @@ public class Server
         public char pendingWildColor = 'W'; // Màu mặc định cho Wild
         public string currentValue; // Giá trị bài hiện tại
         public Dictionary<int, List<string>> playerHands = new Dictionary<int, List<string>>();
+        public bool mustPlayColor = false;
+        public char forcedColor;
         public Room(int id)
         {
             currentTurn = 1;
