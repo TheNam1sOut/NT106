@@ -32,6 +32,8 @@
             loginBtn = new Button();
             textBox1 = new TextBox();
             label1 = new Label();
+            password = new TextBox();
+            label2 = new Label();
             SuspendLayout();
             // 
             // userLabel
@@ -42,7 +44,7 @@
             userLabel.ForeColor = Color.DimGray;
             userLabel.Location = new Point(338, 151);
             userLabel.Name = "userLabel";
-            userLabel.Size = new Size(79, 20);
+            userLabel.Size = new Size(62, 15);
             userLabel.TabIndex = 1;
             userLabel.Text = "Username";
             // 
@@ -63,7 +65,7 @@
             // 
             textBox1.Location = new Point(338, 174);
             textBox1.Name = "textBox1";
-            textBox1.Size = new Size(125, 27);
+            textBox1.Size = new Size(125, 23);
             textBox1.TabIndex = 4;
             // 
             // label1
@@ -74,15 +76,36 @@
             label1.ForeColor = SystemColors.Window;
             label1.Location = new Point(338, 47);
             label1.Name = "label1";
-            label1.Size = new Size(123, 46);
+            label1.Size = new Size(98, 37);
             label1.TabIndex = 5;
             label1.Text = "LOGIN";
+            // 
+            // password
+            // 
+            password.Location = new Point(338, 218);
+            password.Name = "password";
+            password.Size = new Size(125, 23);
+            password.TabIndex = 6;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.BackColor = Color.Transparent;
+            label2.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
+            label2.ForeColor = Color.DimGray;
+            label2.Location = new Point(338, 200);
+            label2.Name = "label2";
+            label2.Size = new Size(59, 15);
+            label2.TabIndex = 7;
+            label2.Text = "Password";
             // 
             // Login
             // 
             BackgroundImage = Properties.Resources.login;
             BackgroundImageLayout = ImageLayout.Zoom;
             ClientSize = new Size(800, 450);
+            Controls.Add(label2);
+            Controls.Add(password);
             Controls.Add(label1);
             Controls.Add(textBox1);
             Controls.Add(userLabel);
@@ -100,5 +123,7 @@
         private Button loginBtn;
         private TextBox textBox1;
         private Label label1;
+        private TextBox password;
+        private Label label2;
     }
 }

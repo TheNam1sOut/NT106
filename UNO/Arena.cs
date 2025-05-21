@@ -77,7 +77,7 @@ namespace UNO
             deck = imageCards.Keys.ToList();
             ShuffleDeck();
         }
-        
+
         private void InitializeMiddleCard()
         {
             DisplayMiddleCard(); // gọi ngay sau LoadCards(), trước DisplayFirstSixCards()
@@ -238,13 +238,13 @@ namespace UNO
             setting.MouseDown += setting_MouseDown;
             setting.MouseUp += setting_MouseUp;
             Room.Text += " " + roomName;
- 
+
 
             this.TcpClient = playerSocket;
             //định nghĩa các hàm khi vào trận
             LoadCards();
 
-            
+
             this.Shown += Arena_Shown;
         }
 
@@ -803,7 +803,7 @@ namespace UNO
                     if (msg.StartsWith("isPlay: "))
                     {
 
-                        var IsPlayControls = new[] { isPlay1, isPlay2 };
+                        var IsPlayControls = new[] { isPlay1, isPlay2,isPlay3,isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
                         var labelControls = new[] { TimeMe, TimeEnemy };
 
@@ -889,12 +889,12 @@ namespace UNO
                     {
                         var p = msg.Substring(9).Split('|');
                         currentMiddleCard = p[0].Trim();
-                           // Cập nhật màu: nếu có wild chọn màu thì p[1], ngược lại lấy màu từ chữ cái đầu
+                        // Cập nhật màu: nếu có wild chọn màu thì p[1], ngược lại lấy màu từ chữ cái đầu
                         currentColor = p.Length > 1 ? p[1][0] : currentMiddleCard[0];
 
-                          // **QUAN TRỌNG**: Cập nhật giá trị (value) mới để cho phép đánh cùng value
-                          //   Wild: DD (chọn màu), DP (+4) giữ nguyên tên
-                          //   Các lá khác: substring từ index 1
+                        // **QUAN TRỌNG**: Cập nhật giá trị (value) mới để cho phép đánh cùng value
+                        //   Wild: DD (chọn màu), DP (+4) giữ nguyên tên
+                        //   Các lá khác: substring từ index 1
                         currentValue = (currentMiddleCard == "DD" || currentMiddleCard == "DP")
                                           ? currentMiddleCard
                                           : currentMiddleCard.Substring(1);
@@ -1009,6 +1009,11 @@ namespace UNO
             return playerHand.Any(card => IsValidMove(card));
         }
         private void Room_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void isPlay2_Click(object sender, EventArgs e)
         {
 
         }

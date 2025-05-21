@@ -5,6 +5,8 @@ using System.Text;
 using static System.Net.Mime.MediaTypeNames;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Data.SqlClient;
+using System.Collections.Generic;
+
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())  // lấy thư mục hiện tại
@@ -32,8 +34,6 @@ using (var conn = new SqlConnection(connStr))
                 }
             }
         }
-        // Chạy thử 1 truy vấn
-       
     }
     catch (Exception ex)
     {
@@ -48,6 +48,7 @@ Console.WriteLine("Server is running!");
 public class Server
 {
     //khởi tạo các biến cần thiết cho server
+    private readonly string _connStr;
     private Thread serverThread;
     private Socket serverSocket;
     private bool isRunning = false;
@@ -56,18 +57,6 @@ public class Server
 
     //lưu trữ danh sách phòng để chứa người chơi
     List<Room> roomList = new List<Room>();
-    private int Opponent(int playerId) => playerId == 1 ? 2 : 1;
-    /* gợi ý sửa lượt người chơi
-    public bool isReversed = false; // Track direction of play
-    private int GetNextPlayer(int currentPlayer, bool isReverse = false)
-    {
-        if (isReverse)
-        {
-            return currentPlayer == 1 ? 4 : currentPlayer - 1;
-        }
-        return currentPlayer == 4 ? 1 : currentPlayer + 1;
-    }*/
-
     private void RefillDrawPile(Room room)
     {
         if (room.Dataqueue1.Count <= 1) return;  // only keep top
@@ -109,7 +98,11 @@ public class Server
 
     public Server()
     {
-
+        var config = new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .Build();
+        _connStr = config.GetConnectionString("MyDb");
     }
 
     //private void SendInitialQueues(Room room)
@@ -186,7 +179,7 @@ public class Server
         }
         return false;
     }
-    private void HandleClient(Socket acceptedClient)
+    private async void HandleClient(Socket acceptedClient)
     {
         string username = "";
         while (acceptedClient.Connected)
@@ -206,9 +199,57 @@ public class Server
                 //xử lí yêu cầu đăng nhập của người chơi
                 if (message.StartsWith("Player: "))
                 {
-                    username = message.Substring(8).Trim();
-                    Console.WriteLine($"Player {username} has connected!");
+                    var parts = message.Substring(8).Split('|');
+                    string name = parts[0].Trim();
+                    string password = parts[1].Trim();
+                    Console.WriteLine($"Player {name} has connected!");
+
+                  
+                    using var conn = new SqlConnection(_connStr);
+                    conn.Open();
+                    string checkSql = "SELECT player_id, password FROM player WHERE username = @username";
+                    using var checkCmd = new SqlCommand(checkSql, conn);
+                    checkCmd.Parameters.AddWithValue("@username", name);
+                    using var reader = checkCmd.ExecuteReader();
+
+                    int playerId;
+                    if (reader.Read())
+                    {
+                        string passwordInDb = reader.GetString(1);
+                        if (password != passwordInDb)
+                        {
+                            // chỉ continue, không return!
+                            byte[] data = Encoding.UTF8.GetBytes("LoginFail: WrongPassword\n");
+                            acceptedClient.Send(data);
+                            continue;
+                        }
+
+                        playerId = reader.GetInt32(0);
+                    }
+                    else
+                    {
+                        reader.Close();
+                        string insertSql = @"
+            INSERT INTO player(username, password, status, point) 
+            VALUES (@username, @password, 1, 0);
+            SELECT SCOPE_IDENTITY();";
+                        using var insertCmd = new SqlCommand(insertSql, conn);
+                        insertCmd.Parameters.AddWithValue("@username", name);
+                        insertCmd.Parameters.AddWithValue("@password", password);
+                        playerId = Convert.ToInt32(insertCmd.ExecuteScalar());
+                    }
+
+                   
+                    byte[] dataOk = Encoding.UTF8.GetBytes($"LoginOK: {playerId}|{name}\n");
+                    acceptedClient.Send(dataOk);
+
+
+
+
+                    
+                    continue;
                 }
+
                 //xử lí yêu cầu vào phòng chơi của người chơi
                 else if (message.StartsWith("Play now: "))
                 {
@@ -302,7 +343,7 @@ public class Server
                         int roomCount = roomList.Count; //id phòng mới
                         Room newRoom = new Room(roomCount);
                         newRoom.player[1] = (username, acceptedClient);
-                        newRoom.ClientId[acceptedClient] = 1    ;
+                        newRoom.ClientId[acceptedClient] = 1;
                         string sendIdMessage = $"YourId: {newRoom.ClientId[acceptedClient]}\n";
                         byte[] idData = Encoding.UTF8.GetBytes(sendIdMessage);
                         acceptedClient.Send(idData);
@@ -361,7 +402,8 @@ public class Server
                     Room room = FindRoombyClientID(acceptedClient);
                     int playerId = room.ClientId[acceptedClient];
                     var parts = message.Substring(10).Split('|');
-                    string card = parts[0];
+                    string cardRaw = parts[0];
+                    string card = cardRaw.Trim();
                     char color = parts.Length > 1 ? parts[1][0] : room.pendingWildColor;
                     // enqueue discard
                     room.Dataqueue1.Enqueue(card);
@@ -373,14 +415,27 @@ public class Server
                     else if (card.EndsWith("P")) { room.pendingDrawCards += 2; }
                     else room.pendingDrawCards = 0;
 
-                    // next turn (skip on skip/reverse managed similarly)
-                    room.currentTurn = Opponent(playerId);
-
+                    // xu li la dao nguoc 
+                    if (card == "RD" || card == "GD" || card == "BD" || card == "YD")
+                    {
+                        room.isReversed = !room.isReversed;
+                        Console.WriteLine($"[DEBUG] Reverse status: {room.isReversed}");
+                    }
+                    int next = nextplayer(playerId, room.isReversed);
+                    // xử lý khi gặp lá skip
+                    if (card.EndsWith("C"))
+                    {
+                        next = nextplayer(next, room.isReversed);
+                    }
+                    room.currentTurn = next;
                     // send new top, turn, pending draw
                     Console.WriteLine($"[DEBUG][PlayCard] - Giá trị hiện tại: {room.currentValue}");
                     Console.WriteLine($"[DEBUG][PlayCard] - Lượt tiếp theo: {room.currentTurn}");
                     Console.WriteLine($"[DEBUG][PlayCard] - Màu hiện tại: {room.pendingWildColor}");
                     Console.WriteLine($"[DEBUG][PlayCard] - Số card pen : {room.pendingDrawCards}");
+                    Console.WriteLine($"[DEBUG] card nhận được: {card}");
+
+
                     Broadcast(room, $"CardTop: {card}|{room.pendingWildColor}\n");
                     Broadcast(room, $"Turn: {room.currentTurn}\n");
                     Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
@@ -434,6 +489,8 @@ public class Server
         Console.WriteLine($"{username} has disconnected!");
     }
 
+    
+
     private void Broadcast(Room room, string msg)
     {
         var data = Encoding.UTF8.GetBytes(msg);
@@ -460,8 +517,10 @@ public class Server
         public char pendingWildColor = 'W'; // Màu mặc định cho Wild
         public string currentValue; // Giá trị bài hiện tại
         public Dictionary<int, List<string>> playerHands = new Dictionary<int, List<string>>();
+        public Dictionary<int, string> PlayerNames { get; } = new Dictionary<int, string>();
         public bool mustPlayColor = false;
         public char forcedColor;
+        public bool isReversed { get; set; } = false; 
         public Room(int id)
         {
             currentTurn = 1;
@@ -489,7 +548,7 @@ public class Server
         public Queue<string> Dataqueue = new Queue<string>(); // bo bai chua danh
         public Queue<string> Dataqueue1 = new Queue<string>();// bo bai da danh
 
-
+        // lấy bài        
         public void InitializeCardQueue()
         {
             string cardsDirectory = "..\\..\\..\\Resources\\UNOCards\\Uno.txt";
@@ -502,6 +561,7 @@ public class Server
             // Shuffle the queue elements
             ShuffleQueue(Dataqueue);
         }
+        // trộn bài 
         public void ShuffleQueue(Queue<string> queue)
         {
             // Convert queue to list
@@ -590,7 +650,15 @@ public class Server
     {
         return roomList.FirstOrDefault(room => room.ClientId.ContainsKey(ClientSocket));
     }
-
+    // hàm chơi theo vòng 
+    private int nextplayer(int currentPlayer, bool isReverse)
+    {
+        if (isReverse)
+        {
+            return currentPlayer == 1 ? 4 : currentPlayer - 1;
+        }
+        return currentPlayer == 4 ? 1 : currentPlayer + 1;
+    }
     public void StartServer()
     {
         serverThread = new Thread(ServerThread);

@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace UNO
 {
@@ -23,14 +24,41 @@ namespace UNO
 
                 //sau khi đã kết nối thì lấy stream để thông báo cho server rằng người dùng đã kết nối
                 NetworkStream stream = player.GetStream();
-                byte[] buffer = Encoding.UTF8.GetBytes($"Player: {textBox1.Text.Trim()}");
+                byte[] buffer = Encoding.UTF8.GetBytes($"Player: {textBox1.Text.Trim()}|{password.Text.Trim()}\n");
                 stream.Write(buffer, 0, buffer.Length);
+               
 
-                //đóng form đăng ký và mở form menu
-                this.Hide();
-                Menu Form1 = new Menu(textBox1.Text.Trim(), player);
-                Form1.Show();
-            
+
+
+                // Đọc phản hồi từ server
+                using var reader = new StreamReader(stream, Encoding.UTF8,leaveOpen:true);
+                string response = await reader.ReadLineAsync();
+                if (response.StartsWith("LoginOK: "))
+                {
+                  
+                    // Mở form
+                    this.Hide();
+                    Menu Form1 = new Menu(textBox1.Text.Trim(), player);
+                    Form1.Show();
+                }
+
+                else
+                if (response.StartsWith("LoginFail: "))
+                {
+                    string reason = response.Substring("LoginFail: ".Length);
+                    string message = reason switch
+                    {
+                        "WrongPassword" => "Mật khẩu không đúng.",
+                        "InvalidFormat" => "Thông tin đăng nhập không hợp lệ.",
+                        "AlreadyOnline" => "Tài khoản đang được sử dụng.",
+                        _ => "Đăng nhập thất bại."
+                    };
+
+                    MessageBox.Show(message, "Lỗi đăng nhập", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+                
+
                 //this.Close();
             }
             catch (Exception ex) 
@@ -48,6 +76,7 @@ namespace UNO
 
             //trước hết là xử lí xem đã có người dùng hay chưa, mà chưa có CSDL nên để sau
             await ConnectServer();
+
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

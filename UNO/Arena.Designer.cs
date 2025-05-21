@@ -51,6 +51,8 @@
             isPlay1 = new PictureBox();
             isPlay2 = new PictureBox();
             Room = new TextBox();
+            isPlay3 = new PictureBox();
+            isPlay4 = new PictureBox();
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).BeginInit();
@@ -66,6 +68,8 @@
             ((System.ComponentModel.ISupportInitialize)Card6).BeginInit();
             ((System.ComponentModel.ISupportInitialize)isPlay1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)isPlay2).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)isPlay3).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)isPlay4).BeginInit();
             SuspendLayout();
             // 
             // MiddlePictureBox
@@ -348,10 +352,10 @@
             isPlay1.BackColor = SystemColors.Control;
             isPlay1.Cursor = Cursors.Hand;
             isPlay1.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            isPlay1.Location = new Point(172, 132);
+            isPlay1.Location = new Point(62, 132);
             isPlay1.Margin = new Padding(3, 2, 3, 2);
             isPlay1.Name = "isPlay1";
-            isPlay1.Size = new Size(153, 125);
+            isPlay1.Size = new Size(95, 125);
             isPlay1.SizeMode = PictureBoxSizeMode.Zoom;
             isPlay1.TabIndex = 24;
             isPlay1.TabStop = false;
@@ -361,13 +365,14 @@
             isPlay2.BackColor = SystemColors.Control;
             isPlay2.Cursor = Cursors.Hand;
             isPlay2.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            isPlay2.Location = new Point(452, 132);
+            isPlay2.Location = new Point(244, 132);
             isPlay2.Margin = new Padding(3, 2, 3, 2);
             isPlay2.Name = "isPlay2";
-            isPlay2.Size = new Size(153, 125);
+            isPlay2.Size = new Size(98, 125);
             isPlay2.SizeMode = PictureBoxSizeMode.Zoom;
             isPlay2.TabIndex = 25;
             isPlay2.TabStop = false;
+            isPlay2.Click += isPlay2_Click;
             // 
             // Room
             // 
@@ -378,6 +383,32 @@
             Room.Text = "Room";
             Room.TextChanged += Room_TextChanged;
             // 
+            // isPlay3
+            // 
+            isPlay3.BackColor = SystemColors.Control;
+            isPlay3.Cursor = Cursors.Hand;
+            isPlay3.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
+            isPlay3.Location = new Point(441, 132);
+            isPlay3.Margin = new Padding(3, 2, 3, 2);
+            isPlay3.Name = "isPlay3";
+            isPlay3.Size = new Size(98, 125);
+            isPlay3.SizeMode = PictureBoxSizeMode.Zoom;
+            isPlay3.TabIndex = 27;
+            isPlay3.TabStop = false;
+            // 
+            // isPlay4
+            // 
+            isPlay4.BackColor = SystemColors.Control;
+            isPlay4.Cursor = Cursors.Hand;
+            isPlay4.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
+            isPlay4.Location = new Point(610, 132);
+            isPlay4.Margin = new Padding(3, 2, 3, 2);
+            isPlay4.Name = "isPlay4";
+            isPlay4.Size = new Size(98, 125);
+            isPlay4.SizeMode = PictureBoxSizeMode.Zoom;
+            isPlay4.TabIndex = 28;
+            isPlay4.TabStop = false;
+            // 
             // Arena
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -385,6 +416,8 @@
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(766, 383);
+            Controls.Add(isPlay4);
+            Controls.Add(isPlay3);
             Controls.Add(Room);
             Controls.Add(isPlay2);
             Controls.Add(isPlay1);
@@ -428,6 +461,8 @@
             ((System.ComponentModel.ISupportInitialize)Card6).EndInit();
             ((System.ComponentModel.ISupportInitialize)isPlay1).EndInit();
             ((System.ComponentModel.ISupportInitialize)isPlay2).EndInit();
+            ((System.ComponentModel.ISupportInitialize)isPlay3).EndInit();
+            ((System.ComponentModel.ISupportInitialize)isPlay4).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -457,5 +492,7 @@
         private PictureBox isPlay1;
         private PictureBox isPlay2;
         private TextBox Room;
+        private PictureBox isPlay3;
+        private PictureBox isPlay4;
     }
 }
