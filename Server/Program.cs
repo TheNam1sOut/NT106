@@ -57,6 +57,16 @@ public class Server
     //lưu trữ danh sách phòng để chứa người chơi
     List<Room> roomList = new List<Room>();
     private int Opponent(int playerId) => playerId == 1 ? 2 : 1;
+    /* gợi ý sửa lượt người chơi
+    public bool isReversed = false; // Track direction of play
+    private int GetNextPlayer(int currentPlayer, bool isReverse = false)
+    {
+        if (isReverse)
+        {
+            return currentPlayer == 1 ? 4 : currentPlayer - 1;
+        }
+        return currentPlayer == 4 ? 1 : currentPlayer + 1;
+    }*/
 
     private void RefillDrawPile(Room room)
     {
@@ -222,7 +232,7 @@ public class Server
                             string sendPlayRequest = $"Room: {room.id}";
                             byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                             acceptedClient.Send(sendClient);
-                            string status = $"{room.countrd[1]},{room.countrd[2]}";
+                            string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
                             byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
                             acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
                             string sendIdMessage = $"YourId: 1\n"; // Gửi ID cho player 1
@@ -242,14 +252,49 @@ public class Server
                             string sendPlayRequest = $"Room: {room.id}";
                             byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                             acceptedClient.Send(sendClient);
-                            string status = $"{room.countrd[1]},{room.countrd[2]}";
+                            string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
                             byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
                             acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
                             string sendIdMessage = $"YourId: 2\n"; // Gửi ID cho player 2
                             acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
                             break;
                         }
+                        else if (room.player[3].Item1 == string.Empty)
+                        {
+                            room.player[3] = (username, acceptedClient);
+                            room.ClientId[acceptedClient] = 3;
+                            checkRoomInfo = $"Player {username} has joined in room {room.id}";
+                            Console.WriteLine(checkRoomInfo);
 
+                            //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
+                            string sendPlayRequest = $"Room: {room.id}";
+                            byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
+                            acceptedClient.Send(sendClient);
+                            string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
+                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
+                            acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
+                            string sendIdMessage = $"YourId: 3\n"; // Gửi ID cho player 3
+                            acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
+                            break;
+                        }
+                        else if (room.player[4].Item1 == string.Empty)
+                        {
+                            room.player[4] = (username, acceptedClient);
+                            room.ClientId[acceptedClient] = 4;
+                            checkRoomInfo = $"Player {username} has joined in room {room.id}";
+                            Console.WriteLine(checkRoomInfo);
+
+                            //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
+                            string sendPlayRequest = $"Room: {room.id}";
+                            byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
+                            acceptedClient.Send(sendClient);
+                            string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
+                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
+                            acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
+                            string sendIdMessage = $"YourId: 4\n"; // Gửi ID cho player 4
+                            acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
+                            break;
+                        }
                     }
                     //nếu chưa tìm thấy phòng, tạo phòng mới cho người chơi
                     if (checkRoomInfo.Length <= 0)
@@ -257,7 +302,7 @@ public class Server
                         int roomCount = roomList.Count; //id phòng mới
                         Room newRoom = new Room(roomCount);
                         newRoom.player[1] = (username, acceptedClient);
-                        newRoom.ClientId[acceptedClient] = 1;
+                        newRoom.ClientId[acceptedClient] = 1    ;
                         string sendIdMessage = $"YourId: {newRoom.ClientId[acceptedClient]}\n";
                         byte[] idData = Encoding.UTF8.GetBytes(sendIdMessage);
                         acceptedClient.Send(idData);
@@ -280,9 +325,9 @@ public class Server
                         int ID = room.ClientId[acceptedClient];
                         room.countrd[ID] = 1;
                         Console.WriteLine(room.countrd[ID]);
-                        room.sumcountrd = room.countrd[1] + room.countrd[2];
+                        room.sumcountrd = room.countrd[1] + room.countrd[2] + room.countrd[3] + room.countrd[4];
                         Console.WriteLine($"Player {username} has ready in room {room.id}");
-                        string status = $"{room.countrd[1]},{room.countrd[2]}";
+                        string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
                         string messageToClients = $"isPlay: {status}\n";
                         Console.WriteLine(messageToClients);
                         byte[] data = Encoding.UTF8.GetBytes(messageToClients);
@@ -291,7 +336,7 @@ public class Server
                             sock.Send(data, 0, data.Length, SocketFlags.None);
                         }
 
-                        if (room.rommbg == 0 && room.sumcountrd == 2)
+                        if (room.rommbg == 0 && room.sumcountrd == 4)
                         {
                             Console.WriteLine(room.rommbg + room.sumcountrd);
                             room.rommbg = 1;
@@ -423,7 +468,9 @@ public class Server
             this.id = id;
             player.Add(1, (string.Empty, null));
             player.Add(2, (string.Empty, null));
-            countrd = new int[3];
+            player.Add(3, (string.Empty, null));
+            player.Add(4, (string.Empty, null));
+            countrd = new int[5];
             InitializeCardQueue();
         }
         public int rommbg; // lưu trữ thông tin phòng đã bắt đầu chơi hay chưa
