@@ -682,37 +682,36 @@ namespace UNO
                 MessageBox.Show("Chưa đến lượt bạn!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            if (pendingDraw == 0 && HasPlayableCard())
+            if ( HasPlayableCard())
             {
-                MessageBox.Show("Bạn có lá bài hợp lệ, khôn g thể rút thêm!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Bạn có lá bài hợp lệ, không thể rút thêm!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+
             // Nếu đang bị phạt
             if (pendingDraw > 0)
             {
-
-
-                // Kiểm tra trong tay có lá phạt hợp lệ không
-                bool hasPenaltyCard = playerHand.Any(card => IsValidMove(card));
-                // Thông báo số lá phạt còn lại
+                // Thông báo số lá phạt (tùy chọn)
                 MessageBox.Show($"Bạn bị phạt rút {pendingDraw} lá!", "UNO – Phạt", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                if (hasPenaltyCard)
+
+                // Tự động rút tất cả các lá phạt, mỗi lá cách nhau 200ms
+                int drawCount = pendingDraw;
+                for (int i = 0; i < drawCount; i++)
                 {
-                    // Nếu có, cho phép người chơi chọn đánh (hoặc bấm Draw tiếp để từ chối đánh lá phạt)
-                    return;
-                }
-                else
-                {
-                    // Nếu không có lá phạt, rút 1 lá mỗi click
                     await DrawCards(1);
                     UpdateSixCards();  // Cập nhật UI
-                    return;
+                    await Task.Delay(200);
                 }
+
+                pendingDraw = 0;            // Reset sau khi rút xong
+                DrawButton.Enabled = isPlayerTurn;
+                return;
             }
 
             // Trường hợp bình thường (không phạt): rút 1 lá mỗi click
             await DrawCards(1);
             UpdateSixCards();
+            DrawButton.Enabled = isPlayerTurn;
         }
 
 
