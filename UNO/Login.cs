@@ -48,8 +48,8 @@ namespace UNO
                     string reason = response.Substring("LoginFail: ".Length);
                     string message = reason switch
                     {
+                        
                         "WrongPassword" => "Mật khẩu không đúng.",
-                        "InvalidFormat" => "Thông tin đăng nhập không hợp lệ.",
                         "AlreadyOnline" => "Tài khoản đang được sử dụng.",
                         _ => "Đăng nhập thất bại."
                     };

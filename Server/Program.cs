@@ -181,7 +181,10 @@ public class Server
     }
     private async void HandleClient(Socket acceptedClient)
     {
+        int currentPlayerId = 0;
+        Room rooms = null;
         string username = "";
+        
         while (acceptedClient.Connected)
         {
             try
@@ -199,15 +202,16 @@ public class Server
                 //xử lí yêu cầu đăng nhập của người chơi
                 if (message.StartsWith("Player: "))
                 {
+                    
                     var parts = message.Substring(8).Split('|');
                     string name = parts[0].Trim();
                     string password = parts[1].Trim();
                     Console.WriteLine($"Player {name} has connected!");
 
-                  
+                    // kiểm tra xem người chơi đã đăng nhập hay chưa
                     using var conn = new SqlConnection(_connStr);
                     conn.Open();
-                    string checkSql = "SELECT player_id, password FROM player WHERE username = @username";
+                    string checkSql = "SELECT player_id, password,status FROM player WHERE username = @username";
                     using var checkCmd = new SqlCommand(checkSql, conn);
                     checkCmd.Parameters.AddWithValue("@username", name);
                     using var reader = checkCmd.ExecuteReader();
@@ -216,37 +220,46 @@ public class Server
                     if (reader.Read())
                     {
                         string passwordInDb = reader.GetString(1);
+                        bool isonline = reader.GetBoolean(2);
+                        if (isonline)
+                        {
+                        
+                            byte[] data = Encoding.UTF8.GetBytes("LoginFail: AlreadyOnline\n");
+                            acceptedClient.Send(data);
+                            continue;
+                        }
                         if (password != passwordInDb)
                         {
-                            // chỉ continue, không return!
+                         
                             byte[] data = Encoding.UTF8.GetBytes("LoginFail: WrongPassword\n");
                             acceptedClient.Send(data);
                             continue;
                         }
 
                         playerId = reader.GetInt32(0);
+                        reader.Close();
+                        // Đánh dấu đang online
+                        var updateCmd = new SqlCommand("UPDATE player SET status = 1 WHERE player_id = @id", conn);
+                        updateCmd.Parameters.AddWithValue("@id", playerId);
+                        updateCmd.ExecuteNonQuery();
+                        currentPlayerId = playerId;
                     }
                     else
                     {
                         reader.Close();
                         string insertSql = @"
-            INSERT INTO player(username, password, status, point) 
-            VALUES (@username, @password, 1, 0);
-            SELECT SCOPE_IDENTITY();";
+                        INSERT INTO player(username, password, status, point) 
+                        VALUES (@username, @password, 1, 0);
+                        SELECT SCOPE_IDENTITY();";
                         using var insertCmd = new SqlCommand(insertSql, conn);
                         insertCmd.Parameters.AddWithValue("@username", name);
                         insertCmd.Parameters.AddWithValue("@password", password);
                         playerId = Convert.ToInt32(insertCmd.ExecuteScalar());
                     }
 
-                   
+                      currentPlayerId = playerId;
                     byte[] dataOk = Encoding.UTF8.GetBytes($"LoginOK: {playerId}|{name}\n");
                     acceptedClient.Send(dataOk);
-
-
-
-
-                    
                     continue;
                 }
 
@@ -487,6 +500,18 @@ public class Server
             }
         }
         Console.WriteLine($"{username} has disconnected!");
+        Console.WriteLine($"{currentPlayerId} >0");
+        // xử lí khi người chơi thoát
+        if (currentPlayerId>0)
+        {
+            using var conn=new SqlConnection(_connStr);
+            conn.Open();
+            string updateSql = "UPDATE player SET status = 0 WHERE player_id = @id";
+            using var updateCmd = new SqlCommand(updateSql, conn);
+            updateCmd.Parameters.AddWithValue("@id", currentPlayerId);
+            updateCmd.ExecuteNonQuery();
+        }
+        acceptedClient.Close();
     }
 
     
