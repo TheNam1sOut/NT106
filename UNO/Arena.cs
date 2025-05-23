@@ -40,7 +40,8 @@ namespace UNO
         private bool isPlayerTurn; // true: đến lượt client, false: đối thủ (sau này dùng mạng)
         private int myPlayerId;
         private int pendingDraw = 0;
-
+        private bool unoCalled = false;
+        private int targetId = -1;
 
         /* Một map lưu tất cả hình ảnh lá bài và key để truy xuất các phần tử đó
          * Quy ước về tên lá bài:
@@ -53,7 +54,7 @@ namespace UNO
          * DP: Lá +4
          */
         private Dictionary<string, Image> imageCards = new Dictionary<string, Image>();
-
+        private readonly object playerHandLock = new object();
         //Lưu tên toàn bộ bài người chơi đang giữ
         private List<string> playerHand = new List<string>();
 
@@ -238,7 +239,8 @@ namespace UNO
             setting.MouseDown += setting_MouseDown;
             setting.MouseUp += setting_MouseUp;
             Room.Text += " " + roomName;
-
+            btnUno.Visible = false;
+            btnCatch.Visible = false;
 
             this.TcpClient = playerSocket;
             //định nghĩa các hàm khi vào trận
@@ -328,6 +330,11 @@ namespace UNO
                 pendingCard = cardName;
                 pb.BorderStyle = BorderStyle.Fixed3D;  // highlight
                 pb.BackColor = Color.Yellow; // Thêm màu nền để dễ nhận biết
+                if (playerHand.Count == 2)
+                {
+                    btnUno.Visible = true;
+                }
+
                 return;
             }
 
@@ -356,14 +363,15 @@ namespace UNO
         }
         private void PlayCard(string cardName, PictureBox pb)
         {
-            string message;
             char newColor = currentColor;
+            string message;
+
             // 1. Xoá khỏi tay
-            playerHand.Remove(cardName);
-            discardDeck.Add(cardName);
+
             // 2. Update UI: xoá pictureBox hoặc đổi sang lá úp
             pb.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
             pb.Tag = null;
+            // Sau khi gọi PlayCard và gửi thông điệp xong:
 
             // 3. Nếu là đổi màu (DD hoặc DP), hỏi chọn màu mới
             if (cardName == "DD" || cardName == "DP")
@@ -379,19 +387,29 @@ namespace UNO
             {
                 message = $"PlayCard: {cardName}\n";
             }
+            Console.WriteLine($"[DEBUG] Pre-Remove hand: {string.Join(",", playerHand)}");
+            lock (playerHandLock)
+            {
+                playerHand.Remove(cardName);
+                playerHand.Sort();
+            }
+            Console.WriteLine($"[DEBUG] Post-Remove hand: {string.Join(",", playerHand)}");
+            this.Invoke((Action)(() => UpdateSixCards()));
+            discardDeck.Add(cardName);
+
+            // Gửi message
+            byte[] buffer = Encoding.UTF8.GetBytes(message);
+            stream.Write(buffer, 0, buffer.Length);
             // Cập nhật trạng thái
             currentMiddleCard = cardName;
             currentColor = newColor;
             currentValue = cardName.EndsWith("P") ? "P" : cardName.Substring(1);
 
-            // Gửi message
-            byte[] buffer = Encoding.UTF8.GetBytes(message);
-            stream.Write(buffer, 0, buffer.Length);
-
             // Update UI
             MiddlePictureBox.Image = imageCards[cardName];
             MiddlePictureBox.Tag = cardName;
             // TODO: gửi trạng thái mạng cho đối thủ hoặc gọi hàm xử lý lượt đối thủ
+            btnUno.Visible = false;
         }
         private char PromptForColor()
         {
@@ -682,7 +700,7 @@ namespace UNO
                 MessageBox.Show("Chưa đến lượt bạn!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            if ( HasPlayableCard())
+            if (HasPlayableCard())
             {
                 MessageBox.Show("Bạn có lá bài hợp lệ, không thể rút thêm!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
@@ -691,20 +709,7 @@ namespace UNO
             // Nếu đang bị phạt
             if (pendingDraw > 0)
             {
-                // Thông báo số lá phạt (tùy chọn)
-                MessageBox.Show($"Bạn bị phạt rút {pendingDraw} lá!", "UNO – Phạt", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                // Tự động rút tất cả các lá phạt, mỗi lá cách nhau 200ms
-                int drawCount = pendingDraw;
-                for (int i = 0; i < drawCount; i++)
-                {
-                    await DrawCards(1);
-                    UpdateSixCards();  // Cập nhật UI
-                    await Task.Delay(200);
-                }
-
-                pendingDraw = 0;            // Reset sau khi rút xong
-                DrawButton.Enabled = isPlayerTurn;
+                MessageBox.Show($"Bạn đang bị phạt {pendingDraw} lá!", "UNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -754,7 +759,8 @@ namespace UNO
         // hàm sort theo màu và số 
         private void SortButton_Click(object sender, EventArgs e)
         {
-            playerHand.Sort();
+                playerHand.Sort();
+            
             UpdateSixCards();
         }
         private void ClearPendingHighlight()
@@ -802,7 +808,7 @@ namespace UNO
                     if (msg.StartsWith("isPlay: "))
                     {
 
-                        var IsPlayControls = new[] { isPlay1, isPlay2,isPlay3,isPlay4 };
+                        var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
                         var labelControls = new[] { TimeMe, TimeEnemy };
 
@@ -920,7 +926,10 @@ namespace UNO
                     {
                         int id = int.Parse(msg.Substring(6));
                         isPlayerTurn = (id == myPlayerId);
-                        DrawButton.Enabled = isPlayerTurn;
+                        DrawButton.Enabled = isPlayerTurn && pendingDraw == 0;
+
+                        if (isPlayerTurn)
+                            unoCalled = false; // reset mỗi lượt
                     }
                     else if (msg.StartsWith("Room: "))
                     {
@@ -936,23 +945,58 @@ namespace UNO
                     }
                     else if (msg.StartsWith("DrawCard: "))
                     {
-                        string card = msg.Substring(10).Trim();
+                        string card = msg.Substring("DrawCard: ".Length).Trim();
                         playerHand.Add(card);
-                        UpdateSixCards();
 
-                        // Tự động kiểm tra lá vừa rút có thể đánh không
-                        bool canPlay = IsValidMove(card);
-                        if (canPlay)
+                        this.Invoke((Action)(() =>
                         {
-                            // Tự động highlight lá bài
-                            PictureBox pb = FindPictureBoxForCard(card);
-                            if (pb != null)
+                            UpdateSixCards();
+                            // highlight nếu cần
+                            if (IsValidMove(card))
                             {
-                                pb.BorderStyle = BorderStyle.Fixed3D;
-                                pb.BackColor = Color.Yellow;
+                                var pb = FindPictureBoxForCard(card);
+                                if (pb != null)
+                                {
+                                    pb.BorderStyle = BorderStyle.Fixed3D;
+                                    pb.BackColor = Color.Yellow;
+                                }
                             }
-                        }
+                        }));
                     }
+                    if (msg.StartsWith("CatchWindow: "))
+                    {
+                        targetId = int.Parse(msg.Substring("CatchWindow: ".Length).Trim());
+                        Console.WriteLine("[DEBUG] Nhận CatchWindow cho targetId: " + targetId + ", myId: " + myPlayerId);
+
+                        bool showCatch = (myPlayerId != targetId);
+                        this.Invoke((Action)(() =>
+                        {
+                            btnCatch.Visible = showCatch;
+                        }));
+
+                        Console.WriteLine("[DEBUG] Catch nút hiện lên: " + (showCatch ? "TRUE" : "FALSE"));
+                    }
+
+
+
+                    else if (msg.StartsWith("PlayerWin: "))
+                    {
+                        string winner = msg.Substring("PlayerWin: ".Length);
+                        this.Invoke((Action)(() =>
+                            MessageBox.Show($"{winner} đã chiến thắng", "Kết thúc trò chơi", MessageBoxButtons.OK)
+                        ));
+                    }
+                    else if (msg.StartsWith("AutoDrawCount: "))
+                    {
+                        int count = int.Parse(msg.Substring("AutoDrawCount: ".Length).Trim());
+                        // Hiển thị thông báo (MessageBox hoặc label tuỳ bạn)
+                        this.Invoke((Action)(() =>
+                        {
+                            MessageBox.Show($"Bạn sẽ bị rút {count} lá do hiệu ứng +2/+4!", "Thông báo",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }));
+                    }
+
                 }
 
 
@@ -1015,6 +1059,21 @@ namespace UNO
         private void isPlay2_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void btnUno_Click(object sender, EventArgs e)
+        {
+            stream.Write(Encoding.UTF8.GetBytes($"UnoCall: {myPlayerId}\n"));
+            unoCalled = true;
+            btnUno.Visible = false;
+            Console.WriteLine($"[DEBUG] Sent UnoCall for player {myPlayerId}");
+        }
+
+        private void btnCatch_Click(object sender, EventArgs e)
+        {
+            stream.Write(Encoding.UTF8.GetBytes($"CatchUno: {targetId}\n"));
+            btnCatch.Visible = false;
+            Console.WriteLine($"[DEBUG] Sent CatchUno for target {targetId}");
         }
     }
 }

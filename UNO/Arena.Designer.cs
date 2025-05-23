@@ -59,6 +59,8 @@
             sqlCommand3 = new Microsoft.Data.SqlClient.SqlCommand();
             sqlCommand4 = new Microsoft.Data.SqlClient.SqlCommand();
             sqlCommandBuilder2 = new Microsoft.Data.SqlClient.SqlCommandBuilder();
+            btnUno = new Button();
+            btnCatch = new Button();
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).BeginInit();
@@ -414,6 +416,26 @@
             sqlCommand4.CommandTimeout = 30;
             sqlCommand4.EnableOptimizedParameterBinding = false;
             // 
+            // btnUno
+            // 
+            btnUno.Location = new Point(622, 229);
+            btnUno.Name = "btnUno";
+            btnUno.Size = new Size(69, 36);
+            btnUno.TabIndex = 29;
+            btnUno.Text = "UNO!";
+            btnUno.UseVisualStyleBackColor = true;
+            btnUno.Click += btnUno_Click;
+            // 
+            // btnCatch
+            // 
+            btnCatch.Location = new Point(622, 271);
+            btnCatch.Name = "btnCatch";
+            btnCatch.Size = new Size(69, 34);
+            btnCatch.TabIndex = 30;
+            btnCatch.Text = "Catch";
+            btnCatch.UseVisualStyleBackColor = true;
+            btnCatch.Click += btnCatch_Click;
+            // 
             // Arena
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -421,6 +443,8 @@
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(875, 511);
+            Controls.Add(btnCatch);
+            Controls.Add(btnUno);
             Controls.Add(isPlay4);
             Controls.Add(isPlay3);
             Controls.Add(Room);
@@ -504,5 +528,7 @@
         private Microsoft.Data.SqlClient.SqlCommand sqlCommand3;
         private Microsoft.Data.SqlClient.SqlCommand sqlCommand4;
         private Microsoft.Data.SqlClient.SqlCommandBuilder sqlCommandBuilder2;
+        private Button btnUno;
+        private Button btnCatch;
     }
 }
