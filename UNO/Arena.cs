@@ -586,6 +586,10 @@ namespace UNO
         private void pictureBox1_Click(object sender, EventArgs e)
         {
             emojiPanel.Visible = !emojiPanel.Visible;
+            if (emojiPanel.Visible)
+            {
+                emojiPanel.BringToFront();
+            }
         }
         private void PictureBox_MouseEnter(object sender, EventArgs e) => ApplyHoverEffect();
         private void PictureBox_MouseLeave(object sender, EventArgs e) => MiddlePictureBox.Image = originalImageCard;
@@ -628,7 +632,13 @@ namespace UNO
             Label lbl = sender as Label;
             if (lbl != null)
             {
-                MessageBox.Show("Bạn đã chọn emoji: " + lbl.Text);
+                // Add emoji to chat input
+                chatInput.Text += lbl.Text;
+                chatInput.Focus();
+                chatInput.SelectionStart = chatInput.Text.Length;
+                
+                // Hide emoji panel after selection
+                emojiPanel.Visible = false;
             }
         }
 
@@ -1105,5 +1115,7 @@ namespace UNO
             }
             chatInput.Clear();
         }
+
+
     }
 }
