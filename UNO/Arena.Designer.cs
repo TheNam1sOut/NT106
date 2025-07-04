@@ -61,6 +61,9 @@
             sqlCommandBuilder2 = new Microsoft.Data.SqlClient.SqlCommandBuilder();
             btnUno = new Button();
             btnCatch = new Button();
+            chatBox = new RichTextBox();
+            chatInput = new TextBox();
+            sendBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).BeginInit();
@@ -436,6 +439,32 @@
             btnCatch.UseVisualStyleBackColor = true;
             btnCatch.Click += btnCatch_Click;
             // 
+            // chatBox
+            // 
+            chatBox.Location = new Point(9, 102);
+            chatBox.Name = "chatBox";
+            chatBox.Size = new Size(184, 191);
+            chatBox.TabIndex = 31;
+            chatBox.Text = "";
+            // 
+            // chatInput
+            // 
+            chatInput.Location = new Point(9, 299);
+            chatInput.Name = "chatInput";
+            chatInput.Size = new Size(184, 27);
+            chatInput.TabIndex = 32;
+            chatInput.TextChanged += chatInput_TextChanged;
+            // 
+            // sendBtn
+            // 
+            sendBtn.Location = new Point(9, 332);
+            sendBtn.Name = "sendBtn";
+            sendBtn.Size = new Size(94, 29);
+            sendBtn.TabIndex = 33;
+            sendBtn.Text = "Send";
+            sendBtn.UseVisualStyleBackColor = true;
+            sendBtn.Click += sendBtn_Click;
+            // 
             // Arena
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -443,6 +472,9 @@
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(875, 511);
+            Controls.Add(sendBtn);
+            Controls.Add(chatInput);
+            Controls.Add(chatBox);
             Controls.Add(btnCatch);
             Controls.Add(btnUno);
             Controls.Add(isPlay4);
@@ -530,5 +562,8 @@
         private Microsoft.Data.SqlClient.SqlCommandBuilder sqlCommandBuilder2;
         private Button btnUno;
         private Button btnCatch;
+        private RichTextBox chatBox;
+        private TextBox chatInput;
+        private Button sendBtn;
     }
 }

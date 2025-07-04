@@ -213,478 +213,489 @@ using System.Collections.Concurrent;
 
 
     private async void HandleClient(Socket acceptedClient)
-        {
-            int currentPlayerId = 0;
-            Room rooms = null;
-            string username = "";
+    {
+        int currentPlayerId = 0;
+        Room rooms = null;
+        string username = "";
         
-            while (acceptedClient.Connected)
+        while (acceptedClient.Connected)
+        {
+            try
             {
-                try
+                byteRecv = acceptedClient.Receive(buffer);
+                if (byteRecv == 0)
                 {
-                    byteRecv = acceptedClient.Receive(buffer);
-                    if (byteRecv == 0)
-                    {
-                        break;
-                    }
+                    break;
+                }
 
-                    string message = Encoding.UTF8.GetString(buffer, 0, byteRecv);
+                string message = Encoding.UTF8.GetString(buffer, 0, byteRecv);
 
-                    if (message == null) break;
+                if (message == null) break;
 
-                    //xử lí yêu cầu đăng nhập của người chơi
-                    if (message.StartsWith("Player: "))
-                    {
+                //xử lí yêu cầu đăng nhập của người chơi
+                if (message.StartsWith("Player: "))
+                {
                     
-                        var parts = message.Substring(8).Split('|');
-                        string name = parts[0].Trim();
-                        string password = parts[1].Trim();
-                        Console.WriteLine($"Player {name} has connected!");
+                    var parts = message.Substring(8).Split('|');
+                    string name = parts[0].Trim();
+                    string password = parts[1].Trim();
+                    Console.WriteLine($"Player {name} has connected!");
 
-                        // kiểm tra xem người chơi đã đăng nhập hay chưa
-                        using var conn = new SqlConnection(_connStr);
-                        conn.Open();
-                        string checkSql = "SELECT player_id, password,status FROM player WHERE username = @username";
-                        using var checkCmd = new SqlCommand(checkSql, conn);
-                        checkCmd.Parameters.AddWithValue("@username", name);
-                        using var reader = checkCmd.ExecuteReader();
+                    // kiểm tra xem người chơi đã đăng nhập hay chưa
+                    using var conn = new SqlConnection(_connStr);
+                    conn.Open();
+                    string checkSql = "SELECT player_id, password,status FROM player WHERE username = @username";
+                    using var checkCmd = new SqlCommand(checkSql, conn);
+                    checkCmd.Parameters.AddWithValue("@username", name);
+                    using var reader = checkCmd.ExecuteReader();
 
-                        int playerId;
-                        if (reader.Read())
+                    int playerId;
+                    if (reader.Read())
+                    {
+                        string passwordInDb = reader.GetString(1);
+                        bool isonline = reader.GetBoolean(2);
+                        if (isonline)
                         {
-                            string passwordInDb = reader.GetString(1);
-                            bool isonline = reader.GetBoolean(2);
-                            if (isonline)
-                            {
                         
-                                byte[] data = Encoding.UTF8.GetBytes("LoginFail: AlreadyOnline\n");
-                                acceptedClient.Send(data);
-                                continue;
-                            }
-                            if (password != passwordInDb)
-                            {
-                         
-                                byte[] data = Encoding.UTF8.GetBytes("LoginFail: WrongPassword\n");
-                                acceptedClient.Send(data);
-                                continue;
-                            }
-
-                            playerId = reader.GetInt32(0);
-                            reader.Close();
-                            // Đánh dấu đang online
-                            var updateCmd = new SqlCommand("UPDATE player SET status = 1 WHERE player_id = @id", conn);
-                            updateCmd.Parameters.AddWithValue("@id", playerId);
-                            updateCmd.ExecuteNonQuery();
-                            currentPlayerId = playerId;
+                            byte[] data = Encoding.UTF8.GetBytes("LoginFail: AlreadyOnline\n");
+                            acceptedClient.Send(data);
+                            continue;
                         }
-                        else
+                        if (password != passwordInDb)
                         {
-                            reader.Close();
-                            string insertSql = @"
-                            INSERT INTO player(username, password, status, point) 
-                            VALUES (@username, @password, 1, 0);
-                            SELECT SCOPE_IDENTITY();";
-                            using var insertCmd = new SqlCommand(insertSql, conn);
-                            insertCmd.Parameters.AddWithValue("@username", name);
-                            insertCmd.Parameters.AddWithValue("@password", password);
-                            playerId = Convert.ToInt32(insertCmd.ExecuteScalar());
+                         
+                            byte[] data = Encoding.UTF8.GetBytes("LoginFail: WrongPassword\n");
+                            acceptedClient.Send(data);
+                            continue;
                         }
 
-                          currentPlayerId = playerId;
-                        byte[] dataOk = Encoding.UTF8.GetBytes($"LoginOK: {playerId}|{name}\n");
-                        acceptedClient.Send(dataOk);
-                        continue;
+                        playerId = reader.GetInt32(0);
+                        reader.Close();
+                        // Đánh dấu đang online
+                        var updateCmd = new SqlCommand("UPDATE player SET status = 1 WHERE player_id = @id", conn);
+                        updateCmd.Parameters.AddWithValue("@id", playerId);
+                        updateCmd.ExecuteNonQuery();
+                        currentPlayerId = playerId;
+                    }
+                    else
+                    {
+                        reader.Close();
+                        string insertSql = @"
+                        INSERT INTO player(username, password, status, point) 
+                        VALUES (@username, @password, 1, 0);
+                        SELECT SCOPE_IDENTITY();";
+                        using var insertCmd = new SqlCommand(insertSql, conn);
+                        insertCmd.Parameters.AddWithValue("@username", name);
+                        insertCmd.Parameters.AddWithValue("@password", password);
+                        playerId = Convert.ToInt32(insertCmd.ExecuteScalar());
                     }
 
-                    //xử lí yêu cầu vào phòng chơi của người chơi
-                    else if (message.StartsWith("Play now: "))
+                        currentPlayerId = playerId;
+                    byte[] dataOk = Encoding.UTF8.GetBytes($"LoginOK: {playerId}|{name}\n");
+                    acceptedClient.Send(dataOk);
+                    continue;
+                }
+
+                //xử lí yêu cầu vào phòng chơi của người chơi
+                else if (message.StartsWith("Play now: "))
+                {
+                    username = message.Substring(10).Trim();
+
+                    //chủ yếu kiểm tra xem người dùng đã vào được phòng hay chưa
+                    string checkRoomInfo = string.Empty;
+
+                    //nó tương tự như này: for (int i = 0; i < roomList.Count; i++)
+                    foreach (Room room in roomList)
                     {
-                        username = message.Substring(10).Trim();
-
-                        //chủ yếu kiểm tra xem người dùng đã vào được phòng hay chưa
-                        string checkRoomInfo = string.Empty;
-
-                        //nó tương tự như này: for (int i = 0; i < roomList.Count; i++)
-                        foreach (Room room in roomList)
+                        //tìm thấy phòng trống thông tin người chơi đầu
+                        if (room.player[1].Item1 == string.Empty)
                         {
-                            //tìm thấy phòng trống thông tin người chơi đầu
-                            if (room.player[1].Item1 == string.Empty)
-                            {
-                                room.player[1] = (username, acceptedClient);
-                                room.ClientId[acceptedClient] = 1;
-                                checkRoomInfo = $"Player {username} has joined in room {room.id}";
-                                Console.WriteLine(checkRoomInfo);
-
-                                //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
-                                string sendPlayRequest = $"Room: {room.id}";
-                                byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
-                                acceptedClient.Send(sendClient);
-                                string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
-                                byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
-                                acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
-                                string sendIdMessage = $"YourId: 1\n"; // Gửi ID cho player 1
-                                acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
-                                break;
-
-                            }
-                            //tìm thấy phòng trống thông tin người chơi thứ hai
-                            else if (room.player[2].Item1 == string.Empty)
-                            {
-                                room.player[2] = (username, acceptedClient);
-                                room.ClientId[acceptedClient] = 2;
-                                checkRoomInfo = $"Player {username} has joined in room {room.id}";
-                                Console.WriteLine(checkRoomInfo);
-
-                                //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
-                                string sendPlayRequest = $"Room: {room.id}";
-                                byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
-                                acceptedClient.Send(sendClient);
-                                string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
-                                byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
-                                acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
-                                string sendIdMessage = $"YourId: 2\n"; // Gửi ID cho player 2
-                                acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
-                                break;
-                            }
-                            else if (room.player[3].Item1 == string.Empty)
-                            {
-                                room.player[3] = (username, acceptedClient);
-                                room.ClientId[acceptedClient] = 3;
-                                checkRoomInfo = $"Player {username} has joined in room {room.id}";
-                                Console.WriteLine(checkRoomInfo);
-
-                                //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
-                                string sendPlayRequest = $"Room: {room.id}";
-                                byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
-                                acceptedClient.Send(sendClient);
-                                string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
-                                byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
-                                acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
-                                string sendIdMessage = $"YourId: 3\n"; // Gửi ID cho player 3
-                                acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
-                                break;
-                            }
-                            else if (room.player[4].Item1 == string.Empty)
-                            {
-                                room.player[4] = (username, acceptedClient);
-                                room.ClientId[acceptedClient] = 4;
-                                checkRoomInfo = $"Player {username} has joined in room {room.id}";
-                                Console.WriteLine(checkRoomInfo);
-
-                                //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
-                                string sendPlayRequest = $"Room: {room.id}";
-                                byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
-                                acceptedClient.Send(sendClient);
-                                string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
-                                byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
-                                acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
-                                string sendIdMessage = $"YourId: 4\n"; // Gửi ID cho player 4
-                                acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
-                                break;
-                            }
-                        }
-                        //nếu chưa tìm thấy phòng, tạo phòng mới cho người chơi
-                        if (checkRoomInfo.Length <= 0)
-                        {
-                            int roomCount = roomList.Count; //id phòng mới
-                            Room newRoom = new Room(roomCount);
-                            newRoom.player[1] = (username, acceptedClient);
-                            newRoom.ClientId[acceptedClient] = 1;
-                            string sendIdMessage = $"YourId: {newRoom.ClientId[acceptedClient]}\n";
-                            byte[] idData = Encoding.UTF8.GetBytes(sendIdMessage);
-                            acceptedClient.Send(idData);
-                            roomList.Add(newRoom);
-                            checkRoomInfo = $"Player {username} has joined in room {newRoom.id}";
+                            room.player[1] = (username, acceptedClient);
+                            room.ClientId[acceptedClient] = 1;
+                            checkRoomInfo = $"Player {username} has joined in room {room.id}";
                             Console.WriteLine(checkRoomInfo);
 
                             //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
-                            string sendPlayRequest = $"Room: {newRoom.id}";
+                            string sendPlayRequest = $"Room: {room.id}";
                             byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                             acceptedClient.Send(sendClient);
-                        }
-                    }
-                    // xử lý khi người chơi nhấn ready;
-                    else if (message.StartsWith("Ready:"))
-                    {
-                        Room room = FindRoombyClientID(acceptedClient);
-                        if (room != null)
-                        {
-                            int ID = room.ClientId[acceptedClient];
-                            room.countrd[ID] = 1;
-                            Console.WriteLine(room.countrd[ID]);
-                            room.sumcountrd = room.countrd[1] + room.countrd[2] + room.countrd[3] + room.countrd[4];
-                            Console.WriteLine($"Player {username} has ready in room {room.id}");
                             string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
-                            string messageToClients = $"isPlay: {status}\n";
-                            Console.WriteLine(messageToClients);
-                            byte[] data = Encoding.UTF8.GetBytes(messageToClients);
+                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
+                            acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
+                            string sendIdMessage = $"YourId: 1\n"; // Gửi ID cho player 1
+                            acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
+                            break;
+
+                        }
+                        //tìm thấy phòng trống thông tin người chơi thứ hai
+                        else if (room.player[2].Item1 == string.Empty)
+                        {
+                            room.player[2] = (username, acceptedClient);
+                            room.ClientId[acceptedClient] = 2;
+                            checkRoomInfo = $"Player {username} has joined in room {room.id}";
+                            Console.WriteLine(checkRoomInfo);
+
+                            //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
+                            string sendPlayRequest = $"Room: {room.id}";
+                            byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
+                            acceptedClient.Send(sendClient);
+                            string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
+                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
+                            acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
+                            string sendIdMessage = $"YourId: 2\n"; // Gửi ID cho player 2
+                            acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
+                            break;
+                        }
+                        else if (room.player[3].Item1 == string.Empty)
+                        {
+                            room.player[3] = (username, acceptedClient);
+                            room.ClientId[acceptedClient] = 3;
+                            checkRoomInfo = $"Player {username} has joined in room {room.id}";
+                            Console.WriteLine(checkRoomInfo);
+
+                            //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
+                            string sendPlayRequest = $"Room: {room.id}";
+                            byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
+                            acceptedClient.Send(sendClient);
+                            string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
+                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
+                            acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
+                            string sendIdMessage = $"YourId: 3\n"; // Gửi ID cho player 3
+                            acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
+                            break;
+                        }
+                        else if (room.player[4].Item1 == string.Empty)
+                        {
+                            room.player[4] = (username, acceptedClient);
+                            room.ClientId[acceptedClient] = 4;
+                            checkRoomInfo = $"Player {username} has joined in room {room.id}";
+                            Console.WriteLine(checkRoomInfo);
+
+                            //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
+                            string sendPlayRequest = $"Room: {room.id}";
+                            byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
+                            acceptedClient.Send(sendClient);
+                            string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
+                            byte[] init = Encoding.UTF8.GetBytes($"isPlay: {status}\n");
+                            acceptedClient.Send(init, 0, init.Length, SocketFlags.None);
+                            string sendIdMessage = $"YourId: 4\n"; // Gửi ID cho player 4
+                            acceptedClient.Send(Encoding.UTF8.GetBytes(sendIdMessage));
+                            break;
+                        }
+                    }
+                    //nếu chưa tìm thấy phòng, tạo phòng mới cho người chơi
+                    if (checkRoomInfo.Length <= 0)
+                    {
+                        int roomCount = roomList.Count; //id phòng mới
+                        Room newRoom = new Room(roomCount);
+                        newRoom.player[1] = (username, acceptedClient);
+                        newRoom.ClientId[acceptedClient] = 1;
+                        string sendIdMessage = $"YourId: {newRoom.ClientId[acceptedClient]}\n";
+                        byte[] idData = Encoding.UTF8.GetBytes(sendIdMessage);
+                        acceptedClient.Send(idData);
+                        roomList.Add(newRoom);
+                        checkRoomInfo = $"Player {username} has joined in room {newRoom.id}";
+                        Console.WriteLine(checkRoomInfo);
+
+                        //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
+                        string sendPlayRequest = $"Room: {newRoom.id}";
+                        byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
+                        acceptedClient.Send(sendClient);
+                    }
+                }
+                // xử lý khi người chơi nhấn ready;
+                else if (message.StartsWith("Ready:"))
+                {
+                    Room room = FindRoombyClientID(acceptedClient);
+                    if (room != null)
+                    {
+                        int ID = room.ClientId[acceptedClient];
+                        room.countrd[ID] = 1;
+                        Console.WriteLine(room.countrd[ID]);
+                        room.sumcountrd = room.countrd[1] + room.countrd[2] + room.countrd[3] + room.countrd[4];
+                        Console.WriteLine($"Player {username} has ready in room {room.id}");
+                        string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
+                        string messageToClients = $"isPlay: {status}\n";
+                        Console.WriteLine(messageToClients);
+                        byte[] data = Encoding.UTF8.GetBytes(messageToClients);
+                        foreach (var sock in room.ClientId.Keys)
+                        {
+                            sock.Send(data, 0, data.Length, SocketFlags.None);
+                        }
+
+                        if (room.rommbg == 0 && room.sumcountrd == 4)
+                        {
+                            Console.WriteLine(room.rommbg + room.sumcountrd);
+                            room.rommbg = 1;
                             foreach (var sock in room.ClientId.Keys)
                             {
-                                sock.Send(data, 0, data.Length, SocketFlags.None);
+                                int id = room.ClientId[sock];
+                                sock.Send(Encoding.UTF8.GetBytes($"YourId: {id}\n"));
                             }
 
-                            if (room.rommbg == 0 && room.sumcountrd == 4)
-                            {
-                                Console.WriteLine(room.rommbg + room.sumcountrd);
-                                room.rommbg = 1;
-                                foreach (var sock in room.ClientId.Keys)
-                                {
-                                    int id = room.ClientId[sock];
-                                    sock.Send(Encoding.UTF8.GetBytes($"YourId: {id}\n"));
-                                }
-
-                                Broadcast(room, $"Turn: {room.currentTurn}\n");
-                                Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
-                                SenUnoCardTop(room, "");
-                                SendInitialHand(room);
+                            Broadcast(room, $"Turn: {room.currentTurn}\n");
+                            Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
+                            SenUnoCardTop(room, "");
+                            SendInitialHand(room);
 
 
-                            }
                         }
-                        Console.WriteLine("ready");
                     }
-                    else if (message.StartsWith("PlayCard: "))
-                    {
-                        Console.WriteLine($"[DEBUG] Sending message: {message}");
-                        Console.WriteLine($"[DEBUG] Received raw PlayCard message: '{message.Trim()}'");
-                        Room room = FindRoombyClientID(acceptedClient);
-                        int playerId = room.ClientId[acceptedClient];
-                        var parts = message.Substring(10).Split('|');
-                        string cardRaw = parts[0].Trim().Split('|')[0];
-                        string card = cardRaw;
-                        Console.WriteLine($"[DEBUG] [PlayCard] Nhận từ player{playerId}: {message.Trim()}");
-                        char color = parts.Length > 1 ? parts[1][0] : room.pendingWildColor;
-                        // enqueue discard
-                        room.Dataqueue1.Enqueue(card);
-                        // update wild color & currentValue
-                        room.pendingWildColor = (card == "DD" || card == "DP") ? color : card[0];
-                    room.currentValue = (card == "DD" || card == "DP") ? card : card.Substring(1);
+                    Console.WriteLine("ready");
+                }
+                else if (message.StartsWith("PlayCard: "))
+                {
+                    Console.WriteLine($"[DEBUG] Sending message: {message}");
+                    Console.WriteLine($"[DEBUG] Received raw PlayCard message: '{message.Trim()}'");
+                    Room room = FindRoombyClientID(acceptedClient);
+                    int playerId = room.ClientId[acceptedClient];
+                    var parts = message.Substring(10).Split('|');
+                    string cardRaw = parts[0].Trim().Split('|')[0];
+                    string card = cardRaw;
+                    Console.WriteLine($"[DEBUG] [PlayCard] Nhận từ player{playerId}: {message.Trim()}");
+                    char color = parts.Length > 1 ? parts[1][0] : room.pendingWildColor;
+                    // enqueue discard
+                    room.Dataqueue1.Enqueue(card);
+                    // update wild color & currentValue
+                    room.pendingWildColor = (card == "DD" || card == "DP") ? color : card[0];
+                room.currentValue = (card == "DD" || card == "DP") ? card : card.Substring(1);
 
-                    // process +2/+4
-                    if (card == "DP")
-                        {
-                            // Nếu đang có pendingDrawCards (>0), dù là do +2 hay +4, DP sẽ chồng tiếp 4 lá
-                            if (room.pendingDrawCards > 0)
-                                room.pendingDrawCards += 4;
-                            else
-                                room.pendingDrawCards = 4;
-                        }
-                        else if (card.EndsWith("P"))
-                        {
-                            if (room.pendingDrawCards > 0 )
-                                room.pendingDrawCards += 2;
-                            else if (room.pendingDrawCards == 0)
-                                room.pendingDrawCards = 2;
-                        }
+                // process +2/+4
+                if (card == "DP")
+                    {
+                        // Nếu đang có pendingDrawCards (>0), dù là do +2 hay +4, DP sẽ chồng tiếp 4 lá
+                        if (room.pendingDrawCards > 0)
+                            room.pendingDrawCards += 4;
                         else
-                        {
-                            room.pendingDrawCards = 0;
-                        }
-
-
-                        // xu li la dao nguoc 
-                        if (card == "RD" || card == "GD" || card == "BD" || card == "YD")
-                        {
-                            room.isReversed = !room.isReversed;
-                            Console.WriteLine($"[DEBUG] Reverse status: {room.isReversed}");
-                        }
-                        int next = nextplayer(playerId, room.isReversed);
-                        // xử lý khi gặp lá skip
-                        if (card.EndsWith("C"))
-                        {
-                            next = nextplayer(next, room.isReversed);
-                        }
-                        room.currentTurn = next;
-                        // send new top, turn, pending draw
-                        Console.WriteLine($"[DEBUG][PlayCard] - Giá trị hiện tại: {room.currentValue}");
-                        Console.WriteLine($"[DEBUG][PlayCard] - Lượt tiếp theo: {room.currentTurn}");
-                        Console.WriteLine($"[DEBUG][PlayCard] - Màu hiện tại: {room.pendingWildColor}");
-                        Console.WriteLine($"[DEBUG][PlayCard] - Số card pen : {room.pendingDrawCards}");
-                        Console.WriteLine($"[DEBUG] card nhận được: {card}");
-
-
-                        Broadcast(room, $"CardTop: {card}|{room.pendingWildColor}\n");
-                        Broadcast(room, $"Turn: {room.currentTurn}\n");
-                        Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
-
-                    if (room.playerHands.TryGetValue(playerId, out var queue))
+                            room.pendingDrawCards = 4;
+                    }
+                    else if (card.EndsWith("P"))
                     {
-                        // Tạo danh sách tạm để chứa các lá bài không phải lá vừa đánh
-                        var temp = new List<string>();
-                        bool removed = false;
-
-                        // Lấy từng lá từ queue gốc, bỏ lá đã đánh, và lưu lại những lá còn lại
-                        while (queue.TryDequeue(out var c))
-                        {
-                            if (!removed && (c == card ||
-                     (card == "DD" && c.StartsWith("DD")) ||
-                     (card == "DP" && c.StartsWith("DP"))))
-                            {
-                                removed = true;
-                                continue; // Bỏ qua lá đã đánh
-                            }
-                            temp.Add(c);
-                        }
-
-                        // Thêm lại các lá còn lại vào queue (giữ thứ tự)
-                        foreach (var c in temp)
-                            queue.Enqueue(c);
+                        if (room.pendingDrawCards > 0 )
+                            room.pendingDrawCards += 2;
+                        else if (room.pendingDrawCards == 0)
+                            room.pendingDrawCards = 2;
+                    }
+                    else
+                    {
+                        room.pendingDrawCards = 0;
                     }
 
-                    int remaining = room.playerHands[playerId].Count;
-                        Broadcast(room, $"Remaining: {playerId}:{remaining}\n");
 
-                        // Nếu người chơi còn 1 lá và chưa gọi UNO trước đó
-                        if (remaining == 1 && !room.UnoCalled[playerId])
+                    // xu li la dao nguoc 
+                    if (card == "RD" || card == "GD" || card == "BD" || card == "YD")
+                    {
+                        room.isReversed = !room.isReversed;
+                        Console.WriteLine($"[DEBUG] Reverse status: {room.isReversed}");
+                    }
+                    int next = nextplayer(playerId, room.isReversed);
+                    // xử lý khi gặp lá skip
+                    if (card.EndsWith("C"))
+                    {
+                        next = nextplayer(next, room.isReversed);
+                    }
+                    room.currentTurn = next;
+                    // send new top, turn, pending draw
+                    Console.WriteLine($"[DEBUG][PlayCard] - Giá trị hiện tại: {room.currentValue}");
+                    Console.WriteLine($"[DEBUG][PlayCard] - Lượt tiếp theo: {room.currentTurn}");
+                    Console.WriteLine($"[DEBUG][PlayCard] - Màu hiện tại: {room.pendingWildColor}");
+                    Console.WriteLine($"[DEBUG][PlayCard] - Số card pen : {room.pendingDrawCards}");
+                    Console.WriteLine($"[DEBUG] card nhận được: {card}");
+
+
+                    Broadcast(room, $"CardTop: {card}|{room.pendingWildColor}\n");
+                    Broadcast(room, $"Turn: {room.currentTurn}\n");
+                    Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
+
+                if (room.playerHands.TryGetValue(playerId, out var queue))
+                {
+                    // Tạo danh sách tạm để chứa các lá bài không phải lá vừa đánh
+                    var temp = new List<string>();
+                    bool removed = false;
+
+                    // Lấy từng lá từ queue gốc, bỏ lá đã đánh, và lưu lại những lá còn lại
+                    while (queue.TryDequeue(out var c))
+                    {
+                        if (!removed && (c == card ||
+                    (card == "DD" && c.StartsWith("DD")) ||
+                    (card == "DP" && c.StartsWith("DP"))))
                         {
-                            room.CatchOccurred = false;
-                            string catchMsg = $"CatchWindow: {playerId}\n";
-                            byte[] data = Encoding.UTF8.GetBytes(catchMsg);
-
-                            Console.WriteLine($"[DEBUG] Gửi CatchWindow cho các người chơi khác (loại trừ player {playerId})");
-                            foreach (var sock in room.ClientId.Keys)
-                            {
-                                int receiverId = room.ClientId[sock];
-                                if (receiverId != playerId)
-                                {
-                                    Console.WriteLine($"[DEBUG] Gửi CatchWindow đến player {receiverId}");
-                                    sock.Send(data);
-                                }
-                            }
-                            Console.WriteLine($"[DEBUG] CatchWindow message đã gửi.");
+                            removed = true;
+                            continue; // Bỏ qua lá đã đánh
                         }
-                        else Console.WriteLine($"[DEBUG] Không gửi CatchWindow: playerId={playerId}, remaining={remaining}, UnoCalled={room.UnoCalled[playerId]}");
+                        temp.Add(c);
+                    }
 
+                    // Thêm lại các lá còn lại vào queue (giữ thứ tự)
+                    foreach (var c in temp)
+                        queue.Enqueue(c);
+                }
 
-                        // Nếu người chơi đã đánh hết bài
-                        if (remaining == 0)
+                int remaining = room.playerHands[playerId].Count;
+                    Broadcast(room, $"Remaining: {playerId}:{remaining}\n");
+
+                    // Nếu người chơi còn 1 lá và chưa gọi UNO trước đó
+                    if (remaining == 1 && !room.UnoCalled[playerId])
+                    {
+                        room.CatchOccurred = false;
+                        string catchMsg = $"CatchWindow: {playerId}\n";
+                        byte[] data = Encoding.UTF8.GetBytes(catchMsg);
+
+                        Console.WriteLine($"[DEBUG] Gửi CatchWindow cho các người chơi khác (loại trừ player {playerId})");
+                        foreach (var sock in room.ClientId.Keys)
                         {
-                            // Xác định người thắng và thông báo cho tất cả client
-                            string winner = room.player[playerId].Item1;
-                            Broadcast(room, $"PlayerWin: {winner}\n");
-                            // (Không cần xử lý catch vì game đã kết thúc)
-                        }
-
-                        // Sau khi Broadcast Turn và PendingDraw
-
-                        if (room.pendingDrawCards > 0)
-                        {
-                            int nextId = room.currentTurn;
-                            // Nếu người chơi kế tiếp không có lá +2/+4 phù hợp thì tự động rút bài
-                            if (!HasCounterCard(room, nextId))
+                            int receiverId = room.ClientId[sock];
+                            if (receiverId != playerId)
                             {
-                                var nextSock = room.player[nextId].Item2;
-                            Console.WriteLine($"[DEBUG] next={nextId}, hasCounter={HasCounterCard(room, nextId)}, pending={room.pendingDrawCards}");
-
-                            string notify = $"AutoDrawCount: {room.pendingDrawCards}\n";
-                                nextSock.Send(Encoding.UTF8.GetBytes(notify)); 
-                                for (int i = 0; i < room.pendingDrawCards; i++)
-                                {
-                                    if (room.Dataqueue.Count == 0) RefillDrawPile(room);
-                                    string newCard = room.Dataqueue.Dequeue();
-                                room.playerHands[nextId].Enqueue(newCard);
-
-                                Socket sock = room.player[nextId].Item2;
-                                    sock.Send(Encoding.UTF8.GetBytes($"DrawCard: {newCard}\n"));
-                                    Task.Delay(200).Wait();
-                                }
-                                // Reset lại PendingDraw về 0 và thông báo cho tất cả client
-                                room.pendingDrawCards = 0;
-                                Broadcast(room, $"PendingDraw: 0\n");
+                                Console.WriteLine($"[DEBUG] Gửi CatchWindow đến player {receiverId}");
+                                sock.Send(data);
                             }
                         }
-
+                        Console.WriteLine($"[DEBUG] CatchWindow message đã gửi.");
                     }
-                    else if (message.StartsWith("DrawCard"))
+                    else Console.WriteLine($"[DEBUG] Không gửi CatchWindow: playerId={playerId}, remaining={remaining}, UnoCalled={room.UnoCalled[playerId]}");
+
+
+                    // Nếu người chơi đã đánh hết bài
+                    if (remaining == 0)
                     {
-                        var room = FindRoombyClientID(acceptedClient);
-                        if (room.pendingDrawCards > 0)
-                        {
-                            continue;
-                        }
-                        {
-                            int playerId = room.ClientId[acceptedClient];
-
-
-                            if (room.Dataqueue.Count == 0) RefillDrawPile(room);
-
-                            var drawnCard = room.Dataqueue.Dequeue();
-                        room.playerHands[playerId].Enqueue(drawnCard);
-
-                        acceptedClient.Send(Encoding.UTF8.GetBytes($"DrawCard: {drawnCard}\n"));
-                        }
-                   
-
-                        // broadcast new top
+                        // Xác định người thắng và thông báo cho tất cả client
+                        string winner = room.player[playerId].Item1;
+                        Broadcast(room, $"PlayerWin: {winner}\n");
+                        // (Không cần xử lý catch vì game đã kết thúc)
                     }
-                    else if (message.StartsWith("UnoCall: "))
+
+                    // Sau khi Broadcast Turn và PendingDraw
+
+                    if (room.pendingDrawCards > 0)
                     {
-                        Room room = FindRoombyClientID(acceptedClient);
-                        int playerId = room.ClientId[acceptedClient];
-                        room.UnoCalled[playerId] = true;
-                        Console.WriteLine($"[DEBUG] Player {playerId} gọi UNO.");
-                        continue;
-                    }
-                    else if (message.StartsWith("CatchUno: "))
-                    {
-                        Room room = FindRoombyClientID(acceptedClient);
-                        int catcher = room.ClientId[acceptedClient];
-                        int targetId = int.Parse(message.Substring("CatchUno: ".Length).Trim());
-                        // Nếu mục tiêu chưa gọi UNO và chưa ai bắt được:
-                        if (!room.UnoCalled[targetId] && !room.CatchOccurred)
+                        int nextId = room.currentTurn;
+                        // Nếu người chơi kế tiếp không có lá +2/+4 phù hợp thì tự động rút bài
+                        if (!HasCounterCard(room, nextId))
                         {
-                            room.CatchOccurred = true;
-                            // Phạt target rút thêm 2 lá
-                            for (int i = 0; i < 2; i++)
+                            var nextSock = room.player[nextId].Item2;
+                        Console.WriteLine($"[DEBUG] next={nextId}, hasCounter={HasCounterCard(room, nextId)}, pending={room.pendingDrawCards}");
+
+                        string notify = $"AutoDrawCount: {room.pendingDrawCards}\n";
+                            nextSock.Send(Encoding.UTF8.GetBytes(notify)); 
+                            for (int i = 0; i < room.pendingDrawCards; i++)
                             {
                                 if (room.Dataqueue.Count == 0) RefillDrawPile(room);
                                 string newCard = room.Dataqueue.Dequeue();
-                            room.playerHands[targetId].Enqueue(newCard);
+                            room.playerHands[nextId].Enqueue(newCard);
 
-                            var targetSocket = room.player[targetId].Item2;
-                                targetSocket.Send(Encoding.UTF8.GetBytes($"DrawCard: {newCard}\n"));
+                            Socket sock = room.player[nextId].Item2;
+                                sock.Send(Encoding.UTF8.GetBytes($"DrawCard: {newCard}\n"));
+                                Task.Delay(200).Wait();
                             }
+                            // Reset lại PendingDraw về 0 và thông báo cho tất cả client
+                            room.pendingDrawCards = 0;
+                            Broadcast(room, $"PendingDraw: 0\n");
                         }
-                        Console.WriteLine($"[DEBUG] Player {catcher} bắt lỗi player {targetId}");
-                        continue;
                     }
 
-
-
-                    //else if (message.StartsWith("New Deck: "))
-                    //{
-                    //    Room room = FindRoombyClientID(acceptedClient);
-
-                    //    string[] newDeck = message.Substring("New Deck: ".Length).Split(',');
-                    //    room.Dataqueue.Clear();
-                    //    room.Dataqueue1.Clear();
-                    //    foreach (string card in newDeck)
-                    //    {
-                    //        room.Dataqueue.Enqueue(card);
-                    //    }
-                    //    SendInitialQueues(room);
-                    //}
-
                 }
-                catch (Exception ex)
+                else if (message.StartsWith("DrawCard"))
                 {
-                    Console.WriteLine(ex.Message);
+                    var room = FindRoombyClientID(acceptedClient);
+                    if (room.pendingDrawCards > 0)
+                    {
+                        continue;
+                    }
+                    {
+                        int playerId = room.ClientId[acceptedClient];
+
+
+                        if (room.Dataqueue.Count == 0) RefillDrawPile(room);
+
+                        var drawnCard = room.Dataqueue.Dequeue();
+                    room.playerHands[playerId].Enqueue(drawnCard);
+
+                    acceptedClient.Send(Encoding.UTF8.GetBytes($"DrawCard: {drawnCard}\n"));
+                    }
+                   
+
+                    // broadcast new top
                 }
+                else if (message.StartsWith("UnoCall: "))
+                {
+                    Room room = FindRoombyClientID(acceptedClient);
+                    int playerId = room.ClientId[acceptedClient];
+                    room.UnoCalled[playerId] = true;
+                    Console.WriteLine($"[DEBUG] Player {playerId} gọi UNO.");
+                    continue;
+                }
+                else if (message.StartsWith("CatchUno: "))
+                {
+                    Room room = FindRoombyClientID(acceptedClient);
+                    int catcher = room.ClientId[acceptedClient];
+                    int targetId = int.Parse(message.Substring("CatchUno: ".Length).Trim());
+                    // Nếu mục tiêu chưa gọi UNO và chưa ai bắt được:
+                    if (!room.UnoCalled[targetId] && !room.CatchOccurred)
+                    {
+                        room.CatchOccurred = true;
+                        // Phạt target rút thêm 2 lá
+                        for (int i = 0; i < 2; i++)
+                        {
+                            if (room.Dataqueue.Count == 0) RefillDrawPile(room);
+                            string newCard = room.Dataqueue.Dequeue();
+                        room.playerHands[targetId].Enqueue(newCard);
+
+                        var targetSocket = room.player[targetId].Item2;
+                            targetSocket.Send(Encoding.UTF8.GetBytes($"DrawCard: {newCard}\n"));
+                        }
+                    }
+                    Console.WriteLine($"[DEBUG] Player {catcher} bắt lỗi player {targetId}");
+                    continue;
+
+                }
+                else if (message.StartsWith("Chat: "))
+                {
+                    Room room = FindRoombyClientID(acceptedClient);
+                    int playerId = room.ClientId[acceptedClient];
+                    string msgContent = message.Substring(6).Trim();
+                    string playerName = room.player[playerId].Item1;
+
+                    string pendingMessage = $"Chat: {playerName}|{msgContent}\n";
+                    Broadcast(room, pendingMessage);
+                }
+
+
+
+                //else if (message.StartsWith("New Deck: "))
+                //{
+                //    Room room = FindRoombyClientID(acceptedClient);
+
+                //    string[] newDeck = message.Substring("New Deck: ".Length).Split(',');
+                //    room.Dataqueue.Clear();
+                //    room.Dataqueue1.Clear();
+                //    foreach (string card in newDeck)
+                //    {
+                //        room.Dataqueue.Enqueue(card);
+                //    }
+                //    SendInitialQueues(room);
+                //}
+
             }
-            Console.WriteLine($"{username} has disconnected!");
-            Console.WriteLine($"{currentPlayerId} >0");
-            // xử lí khi người chơi thoát
-            if (currentPlayerId>0)
+            catch (Exception ex)
             {
-                using var conn=new SqlConnection(_connStr);
-                conn.Open();
-                string updateSql = "UPDATE player SET status = 0 WHERE player_id = @id";
-                using var updateCmd = new SqlCommand(updateSql, conn);
-                updateCmd.Parameters.AddWithValue("@id", currentPlayerId);
-                updateCmd.ExecuteNonQuery();
+                Console.WriteLine(ex.Message);
             }
-            acceptedClient.Close();
         }
+        Console.WriteLine($"{username} has disconnected!");
+        Console.WriteLine($"{currentPlayerId} >0");
+        // xử lí khi người chơi thoát
+        if (currentPlayerId>0)
+        {
+            using var conn=new SqlConnection(_connStr);
+            conn.Open();
+            string updateSql = "UPDATE player SET status = 0 WHERE player_id = @id";
+            using var updateCmd = new SqlCommand(updateSql, conn);
+            updateCmd.Parameters.AddWithValue("@id", currentPlayerId);
+            updateCmd.ExecuteNonQuery();
+        }
+        acceptedClient.Close();
+    }
 
     
 

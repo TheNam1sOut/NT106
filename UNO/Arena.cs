@@ -14,6 +14,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using Timer = System.Windows.Forms.Timer;
 using System.Net.Sockets;
 using System.IO;
+using Microsoft.IdentityModel.Tokens;
 
 namespace UNO
 {
@@ -241,6 +242,9 @@ namespace UNO
             Room.Text += " " + roomName;
             btnUno.Visible = false;
             btnCatch.Visible = false;
+            sendBtn.Visible = false;
+            chatBox.Visible = false;
+            chatInput.Visible = false;
 
             this.TcpClient = playerSocket;
             //định nghĩa các hàm khi vào trận
@@ -759,8 +763,8 @@ namespace UNO
         // hàm sort theo màu và số 
         private void SortButton_Click(object sender, EventArgs e)
         {
-                playerHand.Sort();
-            
+            playerHand.Sort();
+
             UpdateSixCards();
         }
         private void ClearPendingHighlight()
@@ -812,7 +816,7 @@ namespace UNO
                         // lưu mảng toàn bộ các controls trong form arena
                         var labelControls = new[] { TimeMe, TimeEnemy };
 
-                        var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton };
+                        var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
                         {
                             MiddlePictureBox,
@@ -875,6 +879,8 @@ namespace UNO
                                 {
                                     control.Visible = true;
                                 }
+                                chatBox.Visible = true;
+                                chatInput.Visible = true;
                             }));
                         }
                         else
@@ -996,6 +1002,15 @@ namespace UNO
                                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }));
                     }
+                    else if (msg.StartsWith("Chat: ")) {
+                        string[] parts = msg.Substring(6).Trim().Split('|', 2);
+                        string playerName = parts[0];
+                        string msgContent = parts[1];
+                        this.Invoke((Action)(() =>
+                        {
+                            chatBox.AppendText($"{playerName}: {msgContent}\n");
+                        }));
+                    }
 
                 }
 
@@ -1074,6 +1089,21 @@ namespace UNO
             stream.Write(Encoding.UTF8.GetBytes($"CatchUno: {targetId}\n"));
             btnCatch.Visible = false;
             Console.WriteLine($"[DEBUG] Sent CatchUno for target {targetId}");
+        }
+
+        private void chatInput_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void sendBtn_Click(object sender, EventArgs e)
+        {
+            string chatMsg = chatInput.Text.Trim();
+            if (!chatMsg.IsNullOrEmpty())
+            {
+                stream.Write(Encoding.UTF8.GetBytes($"Chat: {chatMsg}\n"));
+            }
+            chatInput.Clear();
         }
     }
 }
