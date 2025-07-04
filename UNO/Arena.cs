@@ -1012,7 +1012,8 @@ namespace UNO
                                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }));
                     }
-                    else if (msg.StartsWith("Chat: ")) {
+                    else if (msg.StartsWith("Chat: "))
+                    {
                         string[] parts = msg.Substring(6).Trim().Split('|', 2);
                         string playerName = parts[0];
                         string msgContent = parts[1];
@@ -1116,6 +1117,13 @@ namespace UNO
             chatInput.Clear();
         }
 
+<<<<<<< HEAD
 
+=======
+        private void Arena_Load(object sender, EventArgs e)
+        {
+
+        }
+>>>>>>> firebase
     }
 }

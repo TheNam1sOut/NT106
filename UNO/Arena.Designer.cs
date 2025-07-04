@@ -87,9 +87,10 @@
             // 
             MiddlePictureBox.BackColor = Color.Transparent;
             MiddlePictureBox.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            MiddlePictureBox.Location = new Point(398, 176);
+            MiddlePictureBox.Location = new Point(348, 132);
+            MiddlePictureBox.Margin = new Padding(3, 2, 3, 2);
             MiddlePictureBox.Name = "MiddlePictureBox";
-            MiddlePictureBox.Size = new Size(88, 117);
+            MiddlePictureBox.Size = new Size(77, 88);
             MiddlePictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
             MiddlePictureBox.TabIndex = 0;
             MiddlePictureBox.TabStop = false;
@@ -101,9 +102,10 @@
             AvatarPlayer.BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             AvatarPlayer.Cursor = Cursors.Hand;
             AvatarPlayer.Image = Properties.Resources.avatar_removebg_preview;
-            AvatarPlayer.Location = new Point(71, 419);
+            AvatarPlayer.Location = new Point(62, 314);
+            AvatarPlayer.Margin = new Padding(3, 2, 3, 2);
             AvatarPlayer.Name = "AvatarPlayer";
-            AvatarPlayer.Size = new Size(80, 80);
+            AvatarPlayer.Size = new Size(70, 60);
             AvatarPlayer.SizeMode = PictureBoxSizeMode.StretchImage;
             AvatarPlayer.TabIndex = 1;
             AvatarPlayer.TabStop = false;
@@ -115,9 +117,10 @@
             Enemy.BackColor = Color.Transparent;
             Enemy.Cursor = Cursors.Hand;
             Enemy.Image = Properties.Resources.avatar_removebg_preview;
-            Enemy.Location = new Point(729, 3);
+            Enemy.Location = new Point(638, 2);
+            Enemy.Margin = new Padding(3, 2, 3, 2);
             Enemy.Name = "Enemy";
-            Enemy.Size = new Size(80, 80);
+            Enemy.Size = new Size(70, 60);
             Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
             Enemy.TabIndex = 2;
             Enemy.TabStop = false;
@@ -128,9 +131,10 @@
             // 
             setting.BackColor = Color.Transparent;
             setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
-            setting.Location = new Point(9, 12);
+            setting.Location = new Point(8, 9);
+            setting.Margin = new Padding(3, 2, 3, 2);
             setting.Name = "setting";
-            setting.Size = new Size(47, 47);
+            setting.Size = new Size(41, 35);
             setting.SizeMode = PictureBoxSizeMode.Zoom;
             setting.TabIndex = 3;
             setting.TabStop = false;
@@ -141,9 +145,16 @@
             // 
             imojiButon.BackColor = Color.Transparent;
             imojiButon.Image = Properties.Resources._19822c18e912ad0ffb2ad2faed8a61af__1__removebg_preview1;
+<<<<<<< HEAD
             imojiButon.Location = new Point(106, 332);
             imojiButon.Name = "imojiButon";
             imojiButon.Size = new Size(37, 29);
+=======
+            imojiButon.Location = new Point(8, 330);
+            imojiButon.Margin = new Padding(3, 2, 3, 2);
+            imojiButon.Name = "imojiButon";
+            imojiButon.Size = new Size(49, 38);
+>>>>>>> firebase
             imojiButon.SizeMode = PictureBoxSizeMode.StretchImage;
             imojiButon.TabIndex = 4;
             imojiButon.TabStop = false;
@@ -154,9 +165,10 @@
             // 
             ClockIcon.BackColor = Color.Transparent;
             ClockIcon.Image = Properties.Resources.clock_removebg_preview;
-            ClockIcon.Location = new Point(729, 440);
+            ClockIcon.Location = new Point(638, 330);
+            ClockIcon.Margin = new Padding(3, 2, 3, 2);
             ClockIcon.Name = "ClockIcon";
-            ClockIcon.Size = new Size(66, 59);
+            ClockIcon.Size = new Size(58, 44);
             ClockIcon.SizeMode = PictureBoxSizeMode.StretchImage;
             ClockIcon.TabIndex = 5;
             ClockIcon.TabStop = false;
@@ -166,9 +178,10 @@
             // 
             clock1.BackColor = Color.Transparent;
             clock1.Image = Properties.Resources.clock_removebg_preview;
-            clock1.Location = new Point(62, 3);
+            clock1.Location = new Point(54, 2);
+            clock1.Margin = new Padding(3, 2, 3, 2);
             clock1.Name = "clock1";
-            clock1.Size = new Size(66, 59);
+            clock1.Size = new Size(58, 44);
             clock1.SizeMode = PictureBoxSizeMode.StretchImage;
             clock1.TabIndex = 6;
             clock1.TabStop = false;
@@ -178,9 +191,9 @@
             // 
             TimeMe.BackColor = Color.Transparent;
             TimeMe.Font = new Font("Segoe UI", 21.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            TimeMe.Location = new Point(802, 440);
+            TimeMe.Location = new Point(702, 330);
             TimeMe.Name = "TimeMe";
-            TimeMe.Size = new Size(59, 59);
+            TimeMe.Size = new Size(52, 44);
             TimeMe.TabIndex = 7;
             TimeMe.Text = "10";
             TimeMe.TextAlign = ContentAlignment.MiddleCenter;
@@ -190,9 +203,10 @@
             // DrawButton
             // 
             DrawButton.Cursor = Cursors.Hand;
-            DrawButton.Location = new Point(786, 229);
+            DrawButton.Location = new Point(688, 172);
+            DrawButton.Margin = new Padding(3, 2, 3, 2);
             DrawButton.Name = "DrawButton";
-            DrawButton.Size = new Size(75, 36);
+            DrawButton.Size = new Size(66, 27);
             DrawButton.TabIndex = 8;
             DrawButton.Text = "Draw";
             DrawButton.UseVisualStyleBackColor = true;
@@ -204,9 +218,10 @@
             Card1.BackColor = Color.Transparent;
             Card1.Cursor = Cursors.Hand;
             Card1.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            Card1.Location = new Point(157, 373);
+            Card1.Location = new Point(137, 280);
+            Card1.Margin = new Padding(3, 2, 3, 2);
             Card1.Name = "Card1";
-            Card1.Size = new Size(88, 117);
+            Card1.Size = new Size(77, 88);
             Card1.SizeMode = PictureBoxSizeMode.Zoom;
             Card1.TabIndex = 9;
             Card1.TabStop = false;
@@ -218,9 +233,10 @@
             Card2.BackColor = Color.Transparent;
             Card2.Cursor = Cursors.Hand;
             Card2.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            Card2.Location = new Point(249, 373);
+            Card2.Location = new Point(218, 280);
+            Card2.Margin = new Padding(3, 2, 3, 2);
             Card2.Name = "Card2";
-            Card2.Size = new Size(88, 117);
+            Card2.Size = new Size(77, 88);
             Card2.SizeMode = PictureBoxSizeMode.Zoom;
             Card2.TabIndex = 10;
             Card2.TabStop = false;
@@ -232,9 +248,10 @@
             Card3.BackColor = Color.Transparent;
             Card3.Cursor = Cursors.Hand;
             Card3.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            Card3.Location = new Point(341, 373);
+            Card3.Location = new Point(298, 280);
+            Card3.Margin = new Padding(3, 2, 3, 2);
             Card3.Name = "Card3";
-            Card3.Size = new Size(88, 117);
+            Card3.Size = new Size(77, 88);
             Card3.SizeMode = PictureBoxSizeMode.Zoom;
             Card3.TabIndex = 10;
             Card3.TabStop = false;
@@ -245,9 +262,10 @@
             Card4.BackColor = Color.Transparent;
             Card4.Cursor = Cursors.Hand;
             Card4.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            Card4.Location = new Point(434, 373);
+            Card4.Location = new Point(380, 280);
+            Card4.Margin = new Padding(3, 2, 3, 2);
             Card4.Name = "Card4";
-            Card4.Size = new Size(88, 117);
+            Card4.Size = new Size(77, 88);
             Card4.SizeMode = PictureBoxSizeMode.Zoom;
             Card4.TabIndex = 11;
             Card4.TabStop = false;
@@ -258,9 +276,10 @@
             Card5.BackColor = Color.Transparent;
             Card5.Cursor = Cursors.Hand;
             Card5.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            Card5.Location = new Point(528, 373);
+            Card5.Location = new Point(462, 280);
+            Card5.Margin = new Padding(3, 2, 3, 2);
             Card5.Name = "Card5";
-            Card5.Size = new Size(88, 117);
+            Card5.Size = new Size(77, 88);
             Card5.SizeMode = PictureBoxSizeMode.Zoom;
             Card5.TabIndex = 12;
             Card5.TabStop = false;
@@ -270,9 +289,10 @@
             // PreviousButton
             // 
             PreviousButton.Cursor = Cursors.Hand;
-            PreviousButton.Location = new Point(106, 373);
+            PreviousButton.Location = new Point(93, 280);
+            PreviousButton.Margin = new Padding(3, 2, 3, 2);
             PreviousButton.Name = "PreviousButton";
-            PreviousButton.Size = new Size(37, 29);
+            PreviousButton.Size = new Size(32, 22);
             PreviousButton.TabIndex = 13;
             PreviousButton.Text = "<";
             PreviousButton.UseVisualStyleBackColor = true;
@@ -282,9 +302,10 @@
             // NextButton
             // 
             NextButton.Cursor = Cursors.Hand;
-            NextButton.Location = new Point(717, 373);
+            NextButton.Location = new Point(627, 280);
+            NextButton.Margin = new Padding(3, 2, 3, 2);
             NextButton.Name = "NextButton";
-            NextButton.Size = new Size(37, 29);
+            NextButton.Size = new Size(32, 22);
             NextButton.TabIndex = 14;
             NextButton.Text = ">";
             NextButton.UseVisualStyleBackColor = true;
@@ -294,9 +315,10 @@
             // SortButton
             // 
             SortButton.Cursor = Cursors.Hand;
-            SortButton.Location = new Point(9, 367);
+            SortButton.Location = new Point(8, 275);
+            SortButton.Margin = new Padding(3, 2, 3, 2);
             SortButton.Name = "SortButton";
-            SortButton.Size = new Size(75, 36);
+            SortButton.Size = new Size(66, 27);
             SortButton.TabIndex = 20;
             SortButton.Text = "Sort";
             SortButton.UseVisualStyleBackColor = true;
@@ -308,9 +330,10 @@
             Card6.BackColor = Color.Transparent;
             Card6.Cursor = Cursors.Hand;
             Card6.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            Card6.Location = new Point(622, 373);
+            Card6.Location = new Point(544, 280);
+            Card6.Margin = new Padding(3, 2, 3, 2);
             Card6.Name = "Card6";
-            Card6.Size = new Size(88, 117);
+            Card6.Size = new Size(77, 88);
             Card6.SizeMode = PictureBoxSizeMode.Zoom;
             Card6.TabIndex = 21;
             Card6.TabStop = false;
@@ -321,9 +344,9 @@
             // 
             TimeEnemy.BackColor = Color.Transparent;
             TimeEnemy.Font = new Font("Segoe UI", 21.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            TimeEnemy.Location = new Point(134, 0);
+            TimeEnemy.Location = new Point(117, 0);
             TimeEnemy.Name = "TimeEnemy";
-            TimeEnemy.Size = new Size(59, 59);
+            TimeEnemy.Size = new Size(52, 44);
             TimeEnemy.TabIndex = 22;
             TimeEnemy.Text = "10";
             TimeEnemy.TextAlign = ContentAlignment.MiddleCenter;
@@ -332,9 +355,10 @@
             // ReadyBtn
             // 
             ReadyBtn.Cursor = Cursors.Hand;
-            ReadyBtn.Location = new Point(786, 367);
+            ReadyBtn.Location = new Point(688, 275);
+            ReadyBtn.Margin = new Padding(3, 2, 3, 2);
             ReadyBtn.Name = "ReadyBtn";
-            ReadyBtn.Size = new Size(75, 36);
+            ReadyBtn.Size = new Size(66, 27);
             ReadyBtn.TabIndex = 23;
             ReadyBtn.Text = "Ready";
             ReadyBtn.UseVisualStyleBackColor = true;
@@ -345,9 +369,10 @@
             isPlay1.BackColor = SystemColors.Control;
             isPlay1.Cursor = Cursors.Hand;
             isPlay1.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            isPlay1.Location = new Point(71, 176);
+            isPlay1.Location = new Point(62, 132);
+            isPlay1.Margin = new Padding(3, 2, 3, 2);
             isPlay1.Name = "isPlay1";
-            isPlay1.Size = new Size(109, 167);
+            isPlay1.Size = new Size(95, 125);
             isPlay1.SizeMode = PictureBoxSizeMode.Zoom;
             isPlay1.TabIndex = 24;
             isPlay1.TabStop = false;
@@ -357,9 +382,10 @@
             isPlay2.BackColor = SystemColors.Control;
             isPlay2.Cursor = Cursors.Hand;
             isPlay2.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            isPlay2.Location = new Point(279, 176);
+            isPlay2.Location = new Point(244, 132);
+            isPlay2.Margin = new Padding(3, 2, 3, 2);
             isPlay2.Name = "isPlay2";
-            isPlay2.Size = new Size(112, 167);
+            isPlay2.Size = new Size(98, 125);
             isPlay2.SizeMode = PictureBoxSizeMode.Zoom;
             isPlay2.TabIndex = 25;
             isPlay2.TabStop = false;
@@ -367,10 +393,9 @@
             // 
             // Room
             // 
-            Room.Location = new Point(9, 68);
-            Room.Margin = new Padding(3, 4, 3, 4);
+            Room.Location = new Point(8, 51);
             Room.Name = "Room";
-            Room.Size = new Size(114, 27);
+            Room.Size = new Size(100, 23);
             Room.TabIndex = 26;
             Room.Text = "Room";
             Room.TextChanged += Room_TextChanged;
@@ -380,9 +405,10 @@
             isPlay3.BackColor = SystemColors.Control;
             isPlay3.Cursor = Cursors.Hand;
             isPlay3.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            isPlay3.Location = new Point(504, 176);
+            isPlay3.Location = new Point(441, 132);
+            isPlay3.Margin = new Padding(3, 2, 3, 2);
             isPlay3.Name = "isPlay3";
-            isPlay3.Size = new Size(112, 167);
+            isPlay3.Size = new Size(98, 125);
             isPlay3.SizeMode = PictureBoxSizeMode.Zoom;
             isPlay3.TabIndex = 27;
             isPlay3.TabStop = false;
@@ -392,9 +418,10 @@
             isPlay4.BackColor = SystemColors.Control;
             isPlay4.Cursor = Cursors.Hand;
             isPlay4.Image = Properties.Resources.pngtree_uno_card_png_image_9101654;
-            isPlay4.Location = new Point(697, 176);
+            isPlay4.Location = new Point(610, 132);
+            isPlay4.Margin = new Padding(3, 2, 3, 2);
             isPlay4.Name = "isPlay4";
-            isPlay4.Size = new Size(112, 167);
+            isPlay4.Size = new Size(98, 125);
             isPlay4.SizeMode = PictureBoxSizeMode.Zoom;
             isPlay4.TabIndex = 28;
             isPlay4.TabStop = false;
@@ -421,9 +448,10 @@
             // 
             // btnUno
             // 
-            btnUno.Location = new Point(622, 229);
+            btnUno.Location = new Point(544, 172);
+            btnUno.Margin = new Padding(3, 2, 3, 2);
             btnUno.Name = "btnUno";
-            btnUno.Size = new Size(69, 36);
+            btnUno.Size = new Size(60, 27);
             btnUno.TabIndex = 29;
             btnUno.Text = "UNO!";
             btnUno.UseVisualStyleBackColor = true;
@@ -431,9 +459,10 @@
             // 
             // btnCatch
             // 
-            btnCatch.Location = new Point(622, 271);
+            btnCatch.Location = new Point(544, 203);
+            btnCatch.Margin = new Padding(3, 2, 3, 2);
             btnCatch.Name = "btnCatch";
-            btnCatch.Size = new Size(69, 34);
+            btnCatch.Size = new Size(60, 26);
             btnCatch.TabIndex = 30;
             btnCatch.Text = "Catch";
             btnCatch.UseVisualStyleBackColor = true;
@@ -441,25 +470,28 @@
             // 
             // chatBox
             // 
-            chatBox.Location = new Point(9, 102);
+            chatBox.Location = new Point(8, 76);
+            chatBox.Margin = new Padding(3, 2, 3, 2);
             chatBox.Name = "chatBox";
-            chatBox.Size = new Size(184, 191);
+            chatBox.Size = new Size(162, 144);
             chatBox.TabIndex = 31;
             chatBox.Text = "";
             // 
             // chatInput
             // 
-            chatInput.Location = new Point(9, 299);
+            chatInput.Location = new Point(8, 224);
+            chatInput.Margin = new Padding(3, 2, 3, 2);
             chatInput.Name = "chatInput";
-            chatInput.Size = new Size(184, 27);
+            chatInput.Size = new Size(162, 23);
             chatInput.TabIndex = 32;
             chatInput.TextChanged += chatInput_TextChanged;
             // 
             // sendBtn
             // 
-            sendBtn.Location = new Point(9, 332);
+            sendBtn.Location = new Point(8, 249);
+            sendBtn.Margin = new Padding(3, 2, 3, 2);
             sendBtn.Name = "sendBtn";
-            sendBtn.Size = new Size(94, 29);
+            sendBtn.Size = new Size(82, 22);
             sendBtn.TabIndex = 33;
             sendBtn.Text = "Send";
             sendBtn.UseVisualStyleBackColor = true;
@@ -467,11 +499,11 @@
             // 
             // Arena
             // 
-            AutoScaleDimensions = new SizeF(8F, 20F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
-            ClientSize = new Size(875, 511);
+            ClientSize = new Size(766, 383);
             Controls.Add(sendBtn);
             Controls.Add(chatInput);
             Controls.Add(chatBox);
@@ -503,9 +535,11 @@
             Controls.Add(AvatarPlayer);
             Controls.Add(MiddlePictureBox);
             FormBorderStyle = FormBorderStyle.Fixed3D;
+            Margin = new Padding(3, 2, 3, 2);
             MaximizeBox = false;
             Name = "Arena";
             Text = "Arena";
+            Load += Arena_Load;
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).EndInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).EndInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).EndInit();

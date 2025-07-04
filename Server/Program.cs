@@ -1,152 +1,189 @@
-﻿    using System;
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Text;
-    using static System.Net.Mime.MediaTypeNames;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Data.SqlClient;
-    using System.Collections.Generic;
+﻿using BCrypt.Net; // Add this using directive for BCrypt
+using FirebaseAdmin;
+using FirebaseAdmin.Auth;
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Firestore;
+using Google.Cloud.Firestore.V1;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
+// Ensure you have added the BCrypt.Net-Next NuGet package to your project.
 
-    var config = new ConfigurationBuilder()
-        .SetBasePath(Directory.GetCurrentDirectory())  // lấy thư mục hiện tại
-        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-        .Build();
-    string connStr = config.GetConnectionString("MyDb");  // đọc chuỗi kết nối từ file
-    using (var conn = new SqlConnection(connStr))
+Server server = new Server();
+server.StartServer();
+Console.WriteLine("Server is running!");
+
+public class Server
+{
+    //khởi tạo các biến cần thiết cho server
+    private readonly string _connStr;
+    private readonly FirestoreDb db;
+    private Thread serverThread;
+    private Socket serverSocket;
+    private bool isRunning = false;
+    private int byteRecv = 0;
+    private byte[] buffer = new byte[1024];
+    private readonly ConcurrentDictionary<Socket, (string Uid, string Username)> authenticatedPlayers = new ConcurrentDictionary<Socket, (string, string)>();
+    //lưu trữ danh sách phòng để chứa người chơi
+    List<Room> roomList = new List<Room>();
+    private void RefillDrawPile(Room room)
     {
+        if (room.Dataqueue1.Count <= 1) return;  // only keep top
+        var top = room.Dataqueue1.Dequeue();
+        // move rest to draw pile
+        while (room.Dataqueue1.Count > 0)
+            room.Dataqueue.Enqueue(room.Dataqueue1.Dequeue());
+        ShuffleQueue(room.Dataqueue);
+        room.Dataqueue1.Enqueue(top);
+        // broadcast new top
+        SenUnoCardTop(room, "");
+    }
+    /// <summary>
+    /// Hoán vị ngẫu nhiên các phần tử trong queue.
+    /// </summary>
+    private void ShuffleQueue<T>(Queue<T> queue)
+    {
+        // Chuyển queue thành list để dễ hoán vị
+        var list = queue.ToList();
+        queue.Clear();  // Xóa hết phần tử cũ
+
+        var rnd = new Random();
+        // Lấy ngẫu nhiên từng phần tử từ list rồi enqueue trở lại
+        while (list.Count > 0)
+        {
+            int idx = rnd.Next(list.Count);
+            queue.Enqueue(list[idx]);
+            list.RemoveAt(idx);
+        }
+    }
+    private void SenUnoCardTop(Room room, string unused)
+    {
+        if (room.Dataqueue1.Count == 0) return;
+        var top = room.Dataqueue1.Peek();
+        Console.WriteLine($"[DEBUG][CardTop] Card: {top}, Màu hiện tại: {room.pendingWildColor}");
+        foreach (var sock in room.ClientId.Keys)
+            sock.Send(Encoding.UTF8.GetBytes($"CardTop: {top}|{room.pendingWildColor}\n"));
+    }
+
+    public Server()
+    {
+        string serviceAccountFileName = "gameuno-4db86-firebase-adminsdk-fbsvc-e9eb161dd1.json";
+        string currentDirectory = Directory.GetCurrentDirectory(); // Lấy thư mục hiện hành của ứng dụng
+        string serviceAccountPath = Path.Combine(currentDirectory, serviceAccountFileName);
+        // Kiểm tra xem tệp có tồn tại không
+        if (!File.Exists(serviceAccountPath))
+        {
+            Console.WriteLine($"Lỗi: Không tìm thấy tệp khóa dịch vụ Firebase: {serviceAccountPath}");
+            Console.WriteLine("Vui lòng tải xuống tệp .json từ Firebase Console (Project settings -> Service accounts -> Generate new private key) và đặt vào cùng thư mục với ứng dụng server của bạn.");
+            return; // Dừng khởi tạo nếu không tìm thấy tệp
+        }
+
         try
         {
-            conn.Open();
-            Console.WriteLine("✅ Kết nối SQL Server thành công!");
-            string sql = "SELECT * FROM Game";
-            using (var cmd = new SqlCommand(sql, conn))
-            {
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        int game_id = reader.GetInt32(0);           // cột 0 = Id
-                   
-                        int winner_id = reader.GetInt32(1);           // cột 2 = Age
+            GoogleCredential credential = GoogleCredential.FromFile(serviceAccountPath);
 
-                        Console.WriteLine($"ID: {game_id}, Tuổi: {winner_id}");
-                    }
-                }
+            // FirebaseApp.Create(new AppOptions() // No longer strictly needed for just Firestore, but good to keep if you might use other Firebase services.
+            // {
+            //     Credential = credential,
+            // });
+
+            db = new FirestoreDbBuilder
+            {
+                ProjectId = "gameuno-4db86", // Thay bằng ID dự án của bạn
+                Credential = credential // RẤT QUAN TRỌNG: Truyền credential trực tiếp ở đây
+            }.Build();
+
+            Console.WriteLine("Firebase Firestore khởi tạo thành công!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi nghiêm trọng khi kết nối Firebase hoặc khởi tạo Firestore: {ex.Message}");
+            Console.WriteLine($"Chi tiết: {ex.StackTrace}");
+        }
+    }
+    public async void TestFirestoreConnection()
+    {
+        if (db == null)
+        {
+            Console.WriteLine("Firestore database is not initialized.");
+            return;
+        }
+
+        try
+        {
+            // Tạo một collection tạm thời và thêm một document
+            CollectionReference testCollection = db.Collection("test_connections");
+            DocumentReference testDoc = testCollection.Document("server_status");
+
+            // Cập nhật hoặc tạo document với timestamp
+            await testDoc.SetAsync(new { last_connected = FieldValue.ServerTimestamp, status = "online" });
+
+            // Đọc lại document để xác nhận
+            DocumentSnapshot snapshot = await testDoc.GetSnapshotAsync();
+            if (snapshot.Exists)
+            {
+                Console.WriteLine("Kiểm tra kết nối Firebase Firestore thành công!");
+                Console.WriteLine($"Trạng thái server cuối cùng kết nối: {snapshot.GetValue<Timestamp>("last_connected").ToDateTime()}");
+            }
+            else
+            {
+                Console.WriteLine("Kiểm tra kết nối Firebase Firestore thất bại: Không thể đọc lại document.");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine("❌ Lỗi kết nối: " + ex.Message);
+            Console.WriteLine($"Lỗi khi kiểm tra kết nối Firebase Firestore: {ex.Message}");
+            Console.WriteLine($"Chi tiết: {ex.StackTrace}");
         }
     }
+    //private void SendInitialQueues(Room room)
+    //{
+    //    // saves dataqueue and dataqueue1 as strings
+    //    string drawPile = string.Join(",", room.Dataqueue);
+    //    string discardPile = string.Join(",", room.Dataqueue1);
 
-    Server server = new Server();
-    server.StartServer();
-    Console.WriteLine("Server is running!");
+    //    //wraps them inside a message to send to the clients
+    //    string message = $"Dataqueue: {drawPile}|{discardPile}\n";
+    //    Console.WriteLine(message.Length);
+    //    foreach (var sock in room.ClientId.Keys)
+    //    {
+    //        try
+    //        {
+    //            byte[] data = Encoding.UTF8.GetBytes(message);
+    //            Console.WriteLine(message.Length);
+    //            sock.Send(data, 0, data.Length, SocketFlags.None);
+    //        }
+    //        catch (SocketException ex)
+    //        {
+    //            Console.WriteLine($"Error sending queues to client: {ex.Message}");
+    //        }
+    //    }
+    //}
 
-    public class Server
+    //as what the function says, when the room is first initialized, we send the clients the first cards
+    private void SendInitialHand(Room room)
     {
-        //khởi tạo các biến cần thiết cho server
-        private readonly string _connStr;
-        private Thread serverThread;
-        private Socket serverSocket;
-        private bool isRunning = false;
-        private int byteRecv = 0;
-        private byte[] buffer = new byte[1024];
-
-        //lưu trữ danh sách phòng để chứa người chơi
-        List<Room> roomList = new List<Room>();
-        private void RefillDrawPile(Room room)
+        try
         {
-            if (room.Dataqueue1.Count <= 1) return;  // only keep top
-            var top = room.Dataqueue1.Dequeue();
-            // move rest to draw pile
-            while (room.Dataqueue1.Count > 0)
-                room.Dataqueue.Enqueue(room.Dataqueue1.Dequeue());
-            ShuffleQueue(room.Dataqueue);
-            room.Dataqueue1.Enqueue(top);
-            // broadcast new top
-            SenUnoCardTop(room, "");
-        }
-        /// <summary>
-        /// Hoán vị ngẫu nhiên các phần tử trong queue.
-        /// </summary>
-        private void ShuffleQueue<T>(Queue<T> queue)
-        {
-            // Chuyển queue thành list để dễ hoán vị
-            var list = queue.ToList();
-            queue.Clear();  // Xóa hết phần tử cũ
-
-            var rnd = new Random();
-            // Lấy ngẫu nhiên từng phần tử từ list rồi enqueue trở lại
-            while (list.Count > 0)
+            if (room.Dataqueue1.Count > 0)
             {
-                int idx = rnd.Next(list.Count);
-                queue.Enqueue(list[idx]);
-                list.RemoveAt(idx);
-            }
-        }
-        private void SenUnoCardTop(Room room, string unused)
-        {
-            if (room.Dataqueue1.Count == 0) return;
-            var top = room.Dataqueue1.Peek();
-            Console.WriteLine($"[DEBUG][CardTop] Card: {top}, Màu hiện tại: {room.pendingWildColor}");
-            foreach (var sock in room.ClientId.Keys)
-                sock.Send(Encoding.UTF8.GetBytes($"CardTop: {top}|{room.pendingWildColor}\n"));
-        }
-
-        public Server()
-        {
-            var config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
-            _connStr = config.GetConnectionString("MyDb");
-        }
-
-        //private void SendInitialQueues(Room room)
-        //{
-        //    // saves dataqueue and dataqueue1 as strings
-        //    string drawPile = string.Join(",", room.Dataqueue);
-        //    string discardPile = string.Join(",", room.Dataqueue1);
-
-        //    //wraps them inside a message to send to the clients
-        //    string message = $"Dataqueue: {drawPile}|{discardPile}\n";
-        //    Console.WriteLine(message.Length);
-        //    foreach (var sock in room.ClientId.Keys)
-        //    {
-        //        try
-        //        {
-        //            byte[] data = Encoding.UTF8.GetBytes(message);
-        //            Console.WriteLine(message.Length);
-        //            sock.Send(data, 0, data.Length, SocketFlags.None);
-        //        }
-        //        catch (SocketException ex)
-        //        {
-        //            Console.WriteLine($"Error sending queues to client: {ex.Message}");
-        //        }
-        //    }
-        //}
-
-        //as what the function says, when the room is first initialized, we send the clients the first cards
-        private void SendInitialHand(Room room)
-        {
-            try
-            {
-                if (room.Dataqueue.Count > 0)
+                string topCard;
+                do
                 {
-                    string topCard;
-                    do
-                    {
-                        topCard = room.Dataqueue.Dequeue();
-                        if (topCard == "DD" || topCard == "DP") room.Dataqueue.Enqueue(topCard);
-                    } while (topCard == "DD" || topCard == "DP");
-                    room.Dataqueue1.Enqueue(topCard);
-                    room.currentValue = topCard.Substring(1);
-                    room.pendingWildColor = topCard[0];
-                }
+                    topCard = room.Dataqueue.Dequeue();
+                    if (topCard == "DD" || topCard == "DP") room.Dataqueue.Enqueue(topCard);
+                } while (topCard == "DD" || topCard == "DP");
+                room.Dataqueue1.Enqueue(topCard);
+                room.currentValue = topCard.Substring(1);
+                room.pendingWildColor = topCard[0];
+            }
 
             foreach (var sock in room.ClientId.Keys)
             {
@@ -166,24 +203,24 @@ using System.Collections.Concurrent;
                 sock.Send(Encoding.UTF8.GetBytes(handMsg));
             }
             SenUnoCardTop(room, "");
-                Broadcast(room, $"PendingDraw: 0\n");
+            Broadcast(room, $"PendingDraw: 0\n");
 
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
         }
-        private bool HasPlayableCards(Room room, int playerId)
+        catch (Exception ex)
         {
-            if (!room.playerHands.ContainsKey(playerId)) return false;
-            foreach (string card in room.playerHands[playerId])
-            {
-                if (IsPlayable(card, room))
-                    return true;
-            }
-            return false;
+            Console.WriteLine(ex.Message);
         }
+    }
+    private bool HasPlayableCards(Room room, int playerId)
+    {
+        if (!room.playerHands.ContainsKey(playerId)) return false;
+        foreach (string card in room.playerHands[playerId])
+        {
+            if (IsPlayable(card, room))
+                return true;
+        }
+        return false;
+    }
     private bool HasCounterCard(Room room, int playerId)
     {
         // Nếu không có tay bài, trả false
@@ -217,7 +254,15 @@ using System.Collections.Concurrent;
         int currentPlayerId = 0;
         Room rooms = null;
         string username = "";
-        
+        string authenticatedUserUid = null; // Changed from FirebaseUid as we're not using Firebase Auth UIDs directly.
+                                            // We'll use the username as the document ID for players.
+
+        if (authenticatedPlayers.TryGetValue(acceptedClient, out var playerInfo))
+        {
+            authenticatedUserUid = playerInfo.Uid; // This will now be the username as the doc ID
+            username = playerInfo.Username;
+        }
+
         while (acceptedClient.Connected)
         {
             try
@@ -235,65 +280,106 @@ using System.Collections.Concurrent;
                 //xử lí yêu cầu đăng nhập của người chơi
                 if (message.StartsWith("Player: "))
                 {
-                    
-                    var parts = message.Substring(8).Split('|');
-                    string name = parts[0].Trim();
-                    string password = parts[1].Trim();
-                    Console.WriteLine($"Player {name} has connected!");
-
-                    // kiểm tra xem người chơi đã đăng nhập hay chưa
-                    using var conn = new SqlConnection(_connStr);
-                    conn.Open();
-                    string checkSql = "SELECT player_id, password,status FROM player WHERE username = @username";
-                    using var checkCmd = new SqlCommand(checkSql, conn);
-                    checkCmd.Parameters.AddWithValue("@username", name);
-                    using var reader = checkCmd.ExecuteReader();
-
-                    int playerId;
-                    if (reader.Read())
+                    try
                     {
-                        string passwordInDb = reader.GetString(1);
-                        bool isonline = reader.GetBoolean(2);
-                        if (isonline)
+                        string[] parts = message.Substring("Player: ".Length).Split('|');
+                        if (parts.Length != 2)
                         {
-                        
-                            byte[] data = Encoding.UTF8.GetBytes("LoginFail: AlreadyOnline\n");
-                            acceptedClient.Send(data);
-                            continue;
+                            acceptedClient.Send(Encoding.UTF8.GetBytes("LoginFail: InvalidFormat\n"));
+                            continue; // Use continue to keep the client connected for other messages
                         }
-                        if (password != passwordInDb)
+
+                        string userAttemptedUsername = parts[0].Trim();
+                        string userAttemptedPassword = parts[1].Trim();
+
+                        if (string.IsNullOrEmpty(userAttemptedUsername) || string.IsNullOrEmpty(userAttemptedPassword))
                         {
-                         
-                            byte[] data = Encoding.UTF8.GetBytes("LoginFail: WrongPassword\n");
-                            acceptedClient.Send(data);
+                            acceptedClient.Send(Encoding.UTF8.GetBytes("LoginFail: MissingCredentials\n"));
                             continue;
                         }
 
-                        playerId = reader.GetInt32(0);
-                        reader.Close();
-                        // Đánh dấu đang online
-                        var updateCmd = new SqlCommand("UPDATE player SET status = 1 WHERE player_id = @id", conn);
-                        updateCmd.Parameters.AddWithValue("@id", playerId);
-                        updateCmd.ExecuteNonQuery();
-                        currentPlayerId = playerId;
-                    }
-                    else
-                    {
-                        reader.Close();
-                        string insertSql = @"
-                        INSERT INTO player(username, password, status, point) 
-                        VALUES (@username, @password, 1, 0);
-                        SELECT SCOPE_IDENTITY();";
-                        using var insertCmd = new SqlCommand(insertSql, conn);
-                        insertCmd.Parameters.AddWithValue("@username", name);
-                        insertCmd.Parameters.AddWithValue("@password", password);
-                        playerId = Convert.ToInt32(insertCmd.ExecuteScalar());
-                    }
+                        DocumentReference userDocRef = db.Collection("players").Document(userAttemptedUsername);
+                        DocumentSnapshot snapshot = await userDocRef.GetSnapshotAsync();
 
-                        currentPlayerId = playerId;
-                    byte[] dataOk = Encoding.UTF8.GetBytes($"LoginOK: {playerId}|{name}\n");
-                    acceptedClient.Send(dataOk);
-                    continue;
+                        if (snapshot.Exists)
+                        {
+                            // User exists, check status and password
+                            long status = snapshot.GetValue<long>("status");
+                            string storedHashedPassword = snapshot.GetValue<string>("passwordHash");
+                            string storedUsername = snapshot.GetValue<string>("username"); // Get username from Firestore
+
+                            if (status == 1)
+                            {
+                                // User is already online
+                                Console.WriteLine($"LoginFail for {userAttemptedUsername}: AlreadyOnline.");
+                                acceptedClient.Send(Encoding.UTF8.GetBytes("LoginFail: AlreadyOnline\n"));
+                                continue;
+                            }
+                            else if (status == 0)
+                            {
+                                // User is offline, check password
+                                if (BCrypt.Net.BCrypt.Verify(userAttemptedPassword, storedHashedPassword))
+                                {
+                                    // Password matches, log in
+                                    var updates = new Dictionary<string, object>
+                                    {
+                                        { "status", 1 },
+                                        { "lastLogin", FieldValue.ServerTimestamp }
+                                    };
+                                    await userDocRef.UpdateAsync(updates);
+                                    authenticatedPlayers.TryAdd(acceptedClient, (userAttemptedUsername, storedUsername));
+                                    authenticatedUserUid = userAttemptedUsername;
+                                    username = storedUsername;
+                                    Console.WriteLine($"Successfully logged in {userAttemptedUsername}. Status updated to online.");
+                                    acceptedClient.Send(Encoding.UTF8.GetBytes($"LoginOK: {userAttemptedUsername}\n"));
+                                }
+                                else
+                                {
+                                    // Incorrect password
+                                    Console.WriteLine($"LoginFail for {userAttemptedUsername}: WrongPassword.");
+                                    acceptedClient.Send(Encoding.UTF8.GetBytes("LoginFail: WrongPassword\n"));
+                                    continue;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // User does not exist, create new account (registration)
+                            Console.WriteLine($"User {userAttemptedUsername} not found. Creating new account.");
+                            try
+                            {
+                                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(userAttemptedPassword);
+
+                                var newUserData = new Dictionary<string, object>
+                                {
+                                    { "username", userAttemptedUsername }, // Using the attempted username as display name and document ID
+                                    { "passwordHash", hashedPassword },
+                                    { "status", 1 }, // Set status to online upon creation
+                                    { "lastLogin", FieldValue.ServerTimestamp },
+                                    { "createdAt", FieldValue.ServerTimestamp }
+                                };
+
+                                await userDocRef.SetAsync(newUserData);
+                                authenticatedPlayers.TryAdd(acceptedClient, (userAttemptedUsername, userAttemptedUsername));
+                                authenticatedUserUid = userAttemptedUsername;
+                                username = userAttemptedUsername;
+                                Console.WriteLine($"Successfully created and logged in new user: {userAttemptedUsername}");
+                                acceptedClient.Send(Encoding.UTF8.GetBytes($"LoginOK: {userAttemptedUsername}\n"));
+                            }
+                            catch (Exception createEx)
+                            {
+                                Console.WriteLine($"Error creating user {userAttemptedUsername} in Firestore: {createEx.Message}");
+                                acceptedClient.Send(Encoding.UTF8.GetBytes($"LoginFail: RegistrationFailed|{createEx.Message}\n"));
+                                continue;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"General error in Player message handling: {ex.Message}");
+                        acceptedClient.Send(Encoding.UTF8.GetBytes($"LoginFail: InternalServerError\n"));
+                        continue;
+                    }
                 }
 
                 //xử lí yêu cầu vào phòng chơi của người chơi
@@ -458,10 +544,10 @@ using System.Collections.Concurrent;
                     room.Dataqueue1.Enqueue(card);
                     // update wild color & currentValue
                     room.pendingWildColor = (card == "DD" || card == "DP") ? color : card[0];
-                room.currentValue = (card == "DD" || card == "DP") ? card : card.Substring(1);
+                    room.currentValue = (card == "DD" || card == "DP") ? card : card.Substring(1);
 
-                // process +2/+4
-                if (card == "DP")
+                    // process +2/+4
+                    if (card == "DP")
                     {
                         // Nếu đang có pendingDrawCards (>0), dù là do +2 hay +4, DP sẽ chồng tiếp 4 lá
                         if (room.pendingDrawCards > 0)
@@ -471,7 +557,7 @@ using System.Collections.Concurrent;
                     }
                     else if (card.EndsWith("P"))
                     {
-                        if (room.pendingDrawCards > 0 )
+                        if (room.pendingDrawCards > 0)
                             room.pendingDrawCards += 2;
                         else if (room.pendingDrawCards == 0)
                             room.pendingDrawCards = 2;
@@ -507,31 +593,31 @@ using System.Collections.Concurrent;
                     Broadcast(room, $"Turn: {room.currentTurn}\n");
                     Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
 
-                if (room.playerHands.TryGetValue(playerId, out var queue))
-                {
-                    // Tạo danh sách tạm để chứa các lá bài không phải lá vừa đánh
-                    var temp = new List<string>();
-                    bool removed = false;
-
-                    // Lấy từng lá từ queue gốc, bỏ lá đã đánh, và lưu lại những lá còn lại
-                    while (queue.TryDequeue(out var c))
+                    if (room.playerHands.TryGetValue(playerId, out var queue))
                     {
-                        if (!removed && (c == card ||
-                    (card == "DD" && c.StartsWith("DD")) ||
-                    (card == "DP" && c.StartsWith("DP"))))
+                        // Tạo danh sách tạm để chứa các lá bài không phải lá vừa đánh
+                        var temp = new List<string>();
+                        bool removed = false;
+
+                        // Lấy từng lá từ queue gốc, bỏ lá đã đánh, và lưu lại những lá còn lại
+                        while (queue.TryDequeue(out var c))
                         {
-                            removed = true;
-                            continue; // Bỏ qua lá đã đánh
+                            if (!removed && (c == card ||
+                        (card == "DD" && c.StartsWith("DD")) ||
+                        (card == "DP" && c.StartsWith("DP"))))
+                            {
+                                removed = true;
+                                continue; // Bỏ qua lá đã đánh
+                            }
+                            temp.Add(c);
                         }
-                        temp.Add(c);
+
+                        // Thêm lại các lá còn lại vào queue (giữ thứ tự)
+                        foreach (var c in temp)
+                            queue.Enqueue(c);
                     }
 
-                    // Thêm lại các lá còn lại vào queue (giữ thứ tự)
-                    foreach (var c in temp)
-                        queue.Enqueue(c);
-                }
-
-                int remaining = room.playerHands[playerId].Count;
+                    int remaining = room.playerHands[playerId].Count;
                     Broadcast(room, $"Remaining: {playerId}:{remaining}\n");
 
                     // Nếu người chơi còn 1 lá và chưa gọi UNO trước đó
@@ -574,17 +660,17 @@ using System.Collections.Concurrent;
                         if (!HasCounterCard(room, nextId))
                         {
                             var nextSock = room.player[nextId].Item2;
-                        Console.WriteLine($"[DEBUG] next={nextId}, hasCounter={HasCounterCard(room, nextId)}, pending={room.pendingDrawCards}");
+                            Console.WriteLine($"[DEBUG] next={nextId}, hasCounter={HasCounterCard(room, nextId)}, pending={room.pendingDrawCards}");
 
-                        string notify = $"AutoDrawCount: {room.pendingDrawCards}\n";
-                            nextSock.Send(Encoding.UTF8.GetBytes(notify)); 
+                            string notify = $"AutoDrawCount: {room.pendingDrawCards}\n";
+                            nextSock.Send(Encoding.UTF8.GetBytes(notify));
                             for (int i = 0; i < room.pendingDrawCards; i++)
                             {
                                 if (room.Dataqueue.Count == 0) RefillDrawPile(room);
                                 string newCard = room.Dataqueue.Dequeue();
-                            room.playerHands[nextId].Enqueue(newCard);
+                                room.playerHands[nextId].Enqueue(newCard);
 
-                            Socket sock = room.player[nextId].Item2;
+                                Socket sock = room.player[nextId].Item2;
                                 sock.Send(Encoding.UTF8.GetBytes($"DrawCard: {newCard}\n"));
                                 Task.Delay(200).Wait();
                             }
@@ -609,11 +695,11 @@ using System.Collections.Concurrent;
                         if (room.Dataqueue.Count == 0) RefillDrawPile(room);
 
                         var drawnCard = room.Dataqueue.Dequeue();
-                    room.playerHands[playerId].Enqueue(drawnCard);
+                        room.playerHands[playerId].Enqueue(drawnCard);
 
-                    acceptedClient.Send(Encoding.UTF8.GetBytes($"DrawCard: {drawnCard}\n"));
+                        acceptedClient.Send(Encoding.UTF8.GetBytes($"DrawCard: {drawnCard}\n"));
                     }
-                   
+
 
                     // broadcast new top
                 }
@@ -639,9 +725,9 @@ using System.Collections.Concurrent;
                         {
                             if (room.Dataqueue.Count == 0) RefillDrawPile(room);
                             string newCard = room.Dataqueue.Dequeue();
-                        room.playerHands[targetId].Enqueue(newCard);
+                            room.playerHands[targetId].Enqueue(newCard);
 
-                        var targetSocket = room.player[targetId].Item2;
+                            var targetSocket = room.player[targetId].Item2;
                             targetSocket.Send(Encoding.UTF8.GetBytes($"DrawCard: {newCard}\n"));
                         }
                     }
@@ -660,225 +746,223 @@ using System.Collections.Concurrent;
                     Broadcast(room, pendingMessage);
                 }
 
-
-
-                //else if (message.StartsWith("New Deck: "))
-                //{
-                //    Room room = FindRoombyClientID(acceptedClient);
-
-                //    string[] newDeck = message.Substring("New Deck: ".Length).Split(',');
-                //    room.Dataqueue.Clear();
-                //    room.Dataqueue1.Clear();
-                //    foreach (string card in newDeck)
-                //    {
-                //        room.Dataqueue.Enqueue(card);
-                //    }
-                //    SendInitialQueues(room);
-                //}
-
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
         }
-        Console.WriteLine($"{username} has disconnected!");
-        Console.WriteLine($"{currentPlayerId} >0");
-        // xử lí khi người chơi thoát
-        if (currentPlayerId>0)
+        Console.WriteLine($"{(username ?? "Một người dùng không xác định")} đã ngắt kết nối!");
+
+        // Cập nhật trạng thái Firestore thành offline
+        if (!string.IsNullOrEmpty(authenticatedUserUid))
         {
-            using var conn=new SqlConnection(_connStr);
-            conn.Open();
-            string updateSql = "UPDATE player SET status = 0 WHERE player_id = @id";
-            using var updateCmd = new SqlCommand(updateSql, conn);
-            updateCmd.Parameters.AddWithValue("@id", currentPlayerId);
-            updateCmd.ExecuteNonQuery();
+            try
+            {
+                DocumentReference userDoc = db.Collection("players").Document(authenticatedUserUid);
+                await userDoc.UpdateAsync("status", 0);
+                Console.WriteLine($"Đã cập nhật trạng thái thành offline cho người dùng: {authenticatedUserUid}");
+            }
+            catch (Exception dbEx)
+            {
+                Console.WriteLine($"Lỗi khi cập nhật trạng thái offline cho {authenticatedUserUid}: {dbEx.Message}");
+            }
         }
+        else
+        {
+            Console.WriteLine("Không thể cập nhật trạng thái thành offline: Username không xác định cho client đã ngắt kết nối này.");
+        }
+
+        // Xóa client khỏi từ điển authenticatedPlayers
+        authenticatedPlayers.TryRemove(acceptedClient, out _);
+
+        // Đóng socket
         acceptedClient.Close();
     }
 
-    
 
-        private void Broadcast(Room room, string msg)
-        {
-            var data = Encoding.UTF8.GetBytes(msg);
-            foreach (var sock in room.ClientId.Keys)
-                sock.Send(data);
-        }
 
-        private bool IsPlayable(string card, Room room)
-        {
-            char cardColor = (card == "DD" || card == "DP") ? room.pendingWildColor : card[0];
-            string cardValue = (card == "DD" || card == "DP") ? card : card.Substring(1);
-            // Kiểm tra theo màu hiện tại hoặc giá trị
-            return cardColor == room.pendingWildColor
-                   || cardValue == room.currentValue
-                   || card == "DD"
-                   || card == "DP";
-        }
+    private void Broadcast(Room room, string msg)
+    {
+        var data = Encoding.UTF8.GetBytes(msg);
+        foreach (var sock in room.ClientId.Keys)
+            sock.Send(data);
+    }
 
-        private class Room
-        {
-            //thêm constructor tùy chỉnh sau
-            public int currentTurn;
-            public int pendingDrawCards = 0; //stack card cần rút
-            public char pendingWildColor = 'W'; // Màu mặc định cho Wild
-            public string currentValue; // Giá trị bài hiện tại
+    private bool IsPlayable(string card, Room room)
+    {
+        char cardColor = (card == "DD" || card == "DP") ? room.pendingWildColor : card[0];
+        string cardValue = (card == "DD" || card == "DP") ? card : card.Substring(1);
+        // Kiểm tra theo màu hiện tại hoặc giá trị
+        return cardColor == room.pendingWildColor
+               || cardValue == room.currentValue
+               || card == "DD"
+               || card == "DP";
+    }
+
+    private class Room
+    {
+        //thêm constructor tùy chỉnh sau
+        public int currentTurn;
+        public int pendingDrawCards = 0; //stack card cần rút
+        public char pendingWildColor = 'W'; // Màu mặc định cho Wild
+        public string currentValue; // Giá trị bài hiện tại
         public ConcurrentDictionary<int, ConcurrentQueue<string>> playerHands
             = new ConcurrentDictionary<int, ConcurrentQueue<string>>();
         public Dictionary<int, string> PlayerNames { get; } = new Dictionary<int, string>();
-            public bool mustPlayColor = false;
-            public char forcedColor;
-            public Dictionary<int, bool> UnoCalled = new Dictionary<int, bool>();
-            public bool CatchOccurred = false;
-            public bool isReversed { get; set; } = false; 
-            public Room(int id)
-            {
-                currentTurn = 1;
-                this.id = id;
-                player.Add(1, (string.Empty, null));
-                player.Add(2, (string.Empty, null));
-                player.Add(3, (string.Empty, null));
-                player.Add(4, (string.Empty, null));
+        public bool mustPlayColor = false;
+        public char forcedColor;
+        public Dictionary<int, bool> UnoCalled = new Dictionary<int, bool>();
+        public bool CatchOccurred = false;
+        public bool isReversed { get; set; } = false;
+        public Room(int id)
+        {
+            currentTurn = 1;
+            this.id = id;
+            player.Add(1, (string.Empty, null));
+            player.Add(2, (string.Empty, null));
+            player.Add(3, (string.Empty, null));
+            player.Add(4, (string.Empty, null));
             for (int i = 1; i <= 4; i++)
                 playerHands.TryAdd(i, new ConcurrentQueue<string>());
             // Khởi tạo UnoCalled cho các player 1–4
             for (int i = 1; i <= 4; i++)
-                    UnoCalled[i] = false;
+                UnoCalled[i] = false;
 
-                countrd = new int[5];
-                InitializeCardQueue();
-            }
-            public int rommbg; // lưu trữ thông tin phòng đã bắt đầu chơi hay chưa
-            public int id;
-            // mảng lưu trữ thông tin người chơi trong phòng đã nhấn ready hay chưa
-            public int[] countrd;
-            public int sumcountrd = 0; // số người chơi trong phòng
-                                       // 
-            public Dictionary<Socket, int> ClientId = new Dictionary<Socket, int>();
-            //một hashmap lưu trữ người chơi và socket mà họ dùng để kết nối tới server
-            //<int, (string, Socket)>: 
-            //int: id người chơi trong phòng đó (1 hoặc 2)
-            //string: tên người chơi
-            //Socket: socket người chơi sử dụng để kết nối tới server
-            public Dictionary<int, (string, Socket)> player = new Dictionary<int, (string, Socket)>();
-            public Queue<string> Dataqueue = new Queue<string>(); // bo bai chua danh
-            public Queue<string> Dataqueue1 = new Queue<string>();// bo bai da danh
+            countrd = new int[5];
+            InitializeCardQueue();
+        }
+        public int rommbg; // lưu trữ thông tin phòng đã bắt đầu chơi hay chưa
+        public int id;
+        // mảng lưu trữ thông tin người chơi trong phòng đã nhấn ready hay chưa
+        public int[] countrd;
+        public int sumcountrd = 0; // số người chơi trong phòng
+                                   // 
+        public Dictionary<Socket, int> ClientId = new Dictionary<Socket, int>();
+        //một hashmap lưu trữ người chơi và socket mà họ dùng để kết nối tới server
+        //<int, (string, Socket)>: 
+        //int: id người chơi trong phòng đó (1 hoặc 2)
+        //string: tên người chơi
+        //Socket: socket người chơi sử dụng để kết nối tới server
+        public Dictionary<int, (string, Socket)> player = new Dictionary<int, (string, Socket)>();
+        public Queue<string> Dataqueue = new Queue<string>(); // bo bai chua danh
+        public Queue<string> Dataqueue1 = new Queue<string>();// bo bai da danh
 
-            // lấy bài        
-            public void InitializeCardQueue()
+        // lấy bài        
+        public void InitializeCardQueue()
+        {
+            string cardsDirectory = "..\\..\\..\\Resources\\UNOCards\\Uno.txt";
+
+            // Read data from file and enqueue
+            Dataqueue = ReadFileAndEnqueue(cardsDirectory);
+            //bị lỗi
+            //string filePath = Path.Combine(Directory.GetCurrentDirectory(), "Uno.txt");
+
+            // Shuffle the queue elements
+            ShuffleQueue(Dataqueue);
+        }
+        // trộn bài 
+        public void ShuffleQueue(Queue<string> queue)
+        {
+            // Convert queue to list
+            List<string> dataList = new List<string>(queue);
+            // Use Fisher-Yates algorithm to shuffle list
+            Random random = new Random();
+            int n = dataList.Count;
+            while (n > 1)
             {
-                string cardsDirectory = "..\\..\\..\\Resources\\UNOCards\\Uno.txt";
-
-                // Read data from file and enqueue
-                Dataqueue = ReadFileAndEnqueue(cardsDirectory);
-                //bị lỗi
-                //string filePath = Path.Combine(Directory.GetCurrentDirectory(), "Uno.txt");
-
-                // Shuffle the queue elements
-                ShuffleQueue(Dataqueue);
+                n--;
+                int k = random.Next(n + 1);
+                string value = dataList[k];
+                dataList[k] = dataList[n];
+                dataList[n] = value;
             }
-            // trộn bài 
-            public void ShuffleQueue(Queue<string> queue)
+            // Clear the queue
+            queue.Clear();
+            // Enqueue shuffled elements back to the queue
+            foreach (string element in dataList)
             {
-                // Convert queue to list
-                List<string> dataList = new List<string>(queue);
-                // Use Fisher-Yates algorithm to shuffle list
-                Random random = new Random();
-                int n = dataList.Count;
-                while (n > 1)
-                {
-                    n--;
-                    int k = random.Next(n + 1);
-                    string value = dataList[k];
-                    dataList[k] = dataList[n];
-                    dataList[n] = value;
-                }
-                // Clear the queue
-                queue.Clear();
-                // Enqueue shuffled elements back to the queue
-                foreach (string element in dataList)
-                {
-                    queue.Enqueue(element);
-                }
+                queue.Enqueue(element);
             }
-            public Queue<string> ReadFileAndEnqueue(string filePath)
+        }
+        public Queue<string> ReadFileAndEnqueue(string filePath)
+        {
+            Queue<string> dataQueue = new Queue<string>();
+            using (StreamReader reader = new StreamReader(filePath))
             {
-                Queue<string> dataQueue = new Queue<string>();
-                using (StreamReader reader = new StreamReader(filePath))
+                string line;
+                while ((line = reader.ReadLine()) != null)
                 {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
+                    // Remove newline character and split data into elements
+                    string[] elements = line.Split(',');
+                    // Enqueue elements
+                    foreach (string element in elements)
                     {
-                        // Remove newline character and split data into elements
-                        string[] elements = line.Split(',');
-                        // Enqueue elements
-                        foreach (string element in elements)
-                        {
-                            dataQueue.Enqueue(element);
-                        }
+                        dataQueue.Enqueue(element);
                     }
                 }
-                return dataQueue;
             }
-
-            // Method to shuffle queue elements
-
-
+            return dataQueue;
         }
 
-        public void ServerThread()
+        // Method to shuffle queue elements
+
+
+    }
+
+    public void ServerThread()
+    {
+        //lần lượt khởi tạo IPEndPoint và socket, và bind socket này với IPEndPoint của server
+        //để có thể tạo ra một TCPListener
+        IPAddress serverIP = IPAddress.Parse("127.0.0.1");
+        IPEndPoint serverIPEP = new IPEndPoint(serverIP, 10000);
+
+        serverSocket = new Socket(
+            AddressFamily.InterNetwork,
+            SocketType.Stream,
+            ProtocolType.Tcp
+        );
+
+        serverSocket.Bind(serverIPEP);
+        serverSocket.Listen(10); //cho phép tối đa 10 yêu cầu kết nối một lúc
+        isRunning = true;
+
+        //xử lí yêu cầu client tại đây
+        while (isRunning)
         {
-            //lần lượt khởi tạo IPEndPoint và socket, và bind socket này với IPEndPoint của server
-            //để có thể tạo ra một TCPListener
-            IPAddress serverIP = IPAddress.Parse("127.0.0.1");
-            IPEndPoint serverIPEP = new IPEndPoint(serverIP, 10000);
-
-            serverSocket = new Socket(
-                AddressFamily.InterNetwork,
-                SocketType.Stream,
-                ProtocolType.Tcp
-            );
-
-            serverSocket.Bind(serverIPEP);
-            serverSocket.Listen(10); //cho phép tối đa 10 yêu cầu kết nối một lúc
-            isRunning = true;
-
-            //xử lí yêu cầu client tại đây
-            while (isRunning)
+            try
             {
-                try
-                {
-                    Socket acceptedClient = serverSocket.Accept();
+                Socket acceptedClient = serverSocket.Accept();
 
-                    //tạo một luồng mới cho từng client được kết nối
-                    //nếu không thì server không thể giao tiếp với nhiều hơn 1 client
-                    Thread clientThread = new Thread(() => HandleClient(acceptedClient));
-                    clientThread.Start();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error: {ex.Message}");
-                }
+                //tạo một luồng mới cho từng client được kết nối
+                //nếu không thì server không thể giao tiếp với nhiều hơn 1 client
+                Thread clientThread = new Thread(() => HandleClient(acceptedClient));
+                clientThread.Start();
             }
-        }
-        // hàm tìm client theo socket
-        private Room FindRoombyClientID(Socket ClientSocket)
-        {
-            return roomList.FirstOrDefault(room => room.ClientId.ContainsKey(ClientSocket));
-        }
-        // hàm chơi theo vòng 
-        private int nextplayer(int currentPlayer, bool isReverse)
-        {
-            if (isReverse)
+            catch (Exception ex)
             {
-                return currentPlayer == 1 ? 4 : currentPlayer - 1;
+                Console.WriteLine($"Error: {ex.Message}");
             }
-            return currentPlayer == 4 ? 1 : currentPlayer + 1;
-        }
-        public void StartServer()
-        {
-            serverThread = new Thread(ServerThread);
-            serverThread.Start();
         }
     }
+    // hàm tìm client theo socket
+    private Room FindRoombyClientID(Socket ClientSocket)
+    {
+        return roomList.FirstOrDefault(room => room.ClientId.ContainsKey(ClientSocket));
+    }
+    // hàm chơi theo vòng 
+    private int nextplayer(int currentPlayer, bool isReverse)
+    {
+        if (isReverse)
+        {
+            return currentPlayer == 1 ? 4 : currentPlayer - 1;
+        }
+        return currentPlayer == 4 ? 1 : currentPlayer + 1;
+    }
+    public void StartServer()
+    {
+        serverThread = new Thread(ServerThread);
+        serverThread.Start();
+        TestFirestoreConnection();
+    }
+}

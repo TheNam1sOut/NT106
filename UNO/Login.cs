@@ -48,10 +48,18 @@ namespace UNO
                     string reason = response.Substring("LoginFail: ".Length);
                     string message = reason switch
                     {
-                        
-                        "WrongPassword" => "Mật khẩu không đúng.",
+
+
+                        "WrongPassword" => "Mật khẩu không đúng.", // Giữ lại nếu bạn có cách khác để xử lí mật khẩu
                         "AlreadyOnline" => "Tài khoản đang được sử dụng.",
-                        _ => "Đăng nhập thất bại."
+                        "UserAlreadyExists" => "Tài khoản đã tồn tại. Vui lòng đăng nhập hoặc dùng email/tên người dùng khác.",
+                        "RegistrationFailed" => "Đăng ký thất bại. Vui lòng thử lại.",
+                        "DatabaseSaveError" => "Lỗi lưu dữ liệu. Vui lòng thử lại.",
+                        "InvalidFormat" => "Lỗi định dạng yêu cầu.",
+                        "MissingCredentials" => "Vui lòng nhập đầy đủ tên người dùng và mật khẩu.",
+                        "InternalServerError" => "Lỗi server nội bộ. Vui lòng thử lại sau.",
+                        "MessageParseError" => "Lỗi xử lý tin nhắn từ server.",
+                        _ => "Đăng nhập thất bại không xác định."
                     };
 
                     MessageBox.Show(message, "Lỗi đăng nhập", MessageBoxButtons.OK, MessageBoxIcon.Error);
