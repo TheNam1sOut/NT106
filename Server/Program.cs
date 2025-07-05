@@ -172,7 +172,7 @@ public class Server
     {
         try
         {
-            if (room.Dataqueue1.Count > 0)
+            if (room.Dataqueue.Count > 0)
             {
                 string topCard;
                 do

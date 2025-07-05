@@ -1116,14 +1116,10 @@ namespace UNO
             }
             chatInput.Clear();
         }
-
-<<<<<<< HEAD
-
-=======
         private void Arena_Load(object sender, EventArgs e)
         {
 
         }
->>>>>>> firebase
+
     }
 }

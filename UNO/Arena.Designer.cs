@@ -145,16 +145,13 @@
             // 
             imojiButon.BackColor = Color.Transparent;
             imojiButon.Image = Properties.Resources._19822c18e912ad0ffb2ad2faed8a61af__1__removebg_preview1;
-<<<<<<< HEAD
             imojiButon.Location = new Point(106, 332);
             imojiButon.Name = "imojiButon";
             imojiButon.Size = new Size(37, 29);
-=======
             imojiButon.Location = new Point(8, 330);
             imojiButon.Margin = new Padding(3, 2, 3, 2);
             imojiButon.Name = "imojiButon";
             imojiButon.Size = new Size(49, 38);
->>>>>>> firebase
             imojiButon.SizeMode = PictureBoxSizeMode.StretchImage;
             imojiButon.TabIndex = 4;
             imojiButon.TabStop = false;
