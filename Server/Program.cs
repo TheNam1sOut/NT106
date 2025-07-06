@@ -98,8 +98,8 @@ public class Server
 
             db = new FirestoreDbBuilder
             {
-                ProjectId = "gameuno-4db86", // Thay bằng ID dự án của bạn
-                Credential = credential // RẤT QUAN TRỌNG: Truyền credential trực tiếp ở đây
+                ProjectId = "gameuno-4db86", 
+                Credential = credential 
             }.Build();
 
             Console.WriteLine("Firebase Firestore khởi tạo thành công!");
@@ -671,8 +671,33 @@ public class Server
                     {
                         // Xác định người thắng và thông báo cho tất cả client
                         string winner = room.player[playerId].Item1;
-                        DeleteRoom(room);
+                        
                         Broadcast(room, $"PlayerWin: {winner}\n");
+                        try
+                        {
+                            DocumentReference winnerDocref=db.Collection("players").Document(winner);
+                            DocumentSnapshot winnerSnapshot= await winnerDocref.GetSnapshotAsync();
+                            if (winnerSnapshot.Exists)
+                            {
+                                // Cập nhật số trận thắng
+                                long currentPoints = 0;
+                                if (winnerSnapshot.ContainsField("points"))
+                                {
+                                    currentPoints = winnerSnapshot.GetValue<long>("points");
+                                }
+                                await winnerDocref.UpdateAsync("points", currentPoints + 1);
+                                Console.WriteLine($"[Firestore] Đã cập nhật điểm cho {winner}. Tổng điểm mới: {currentPoints + 1}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Không tìm thấy người chơi {winner} trong Firestore để cập nhật số trận thắng.");
+                            }
+                        }
+                        catch(Exception firestoreEX)
+                        {
+                            Console.WriteLine($"[ERROR] Lỗi khi cập nhật điểm cho người chơi {winner}: {firestoreEX.Message}");
+                        }
+                        DeleteRoom(room);
                     }
 
                     // Sau khi Broadcast Turn và PendingDraw
