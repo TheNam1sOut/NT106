@@ -1088,6 +1088,16 @@ namespace UNO
                             Form1.Show();
                         }));
                     }
+                    else if (msg.StartsWith("HideCatchWindow"))
+                    {
+                        // Ẩn luôn nút Catch trên tất cả client
+                        this.Invoke((Action)(() =>
+                        {
+                            btnCatch.Visible = false;
+                        }));
+                        Console.WriteLine("[DEBUG] Received HideCatchWindow, hiding Catch button on this client");
+                    }
+
 
 
                 }

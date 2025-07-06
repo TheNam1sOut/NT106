@@ -739,6 +739,7 @@ public class Server
                             var targetSocket = room.player[targetId].Item2;
                             targetSocket.Send(Encoding.UTF8.GetBytes($"DrawCard: {newCard}\n"));
                         }
+                        Broadcast(room, "HideCatchWindow:\n");
                     }
                     Console.WriteLine($"[DEBUG] Player {catcher} bắt lỗi player {targetId}");
                     continue;
