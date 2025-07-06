@@ -247,6 +247,11 @@ namespace UNO
             sendBtn.Visible = false;
             chatBox.Visible = false;
             chatInput.Visible = false;
+            NameMe.Visible = false;
+            Name1.Visible = false;
+            Name2.Visible = false;
+            Name3.Visible = false;
+
 
             this.playerName = playerName;
             this.TcpClient = playerSocket;
@@ -829,12 +834,14 @@ namespace UNO
 
                         var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { TimeMe, TimeEnemy };
+                        var labelControls = new[] { TimeMe, TimeEnemy, NameMe, Name1, Name2, Name3 };
 
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
                         {
                             MiddlePictureBox,
+                            pictureBox1,
+                            pictureBox2,
                             AvatarPlayer,
                             Enemy,
                             setting,
@@ -1049,7 +1056,7 @@ namespace UNO
                             scoreLabel.Visible = true;
                             backBtn.Visible = true;
 
-                            
+
                         }));
                     }
                     else if (msg.StartsWith("AutoDrawCount: "))
@@ -1077,11 +1084,11 @@ namespace UNO
                         string disconnectedPlayer = msg.Substring("PlayerDisconnected: ".Length).Trim();
                         this.Invoke((Action)(() =>
                         {
-                            MessageBox.Show($"{disconnectedPlayer} has disconnected from the game.\nThe match has been ended.", 
-                                           "Player Disconnected", 
-                                           MessageBoxButtons.OK, 
+                            MessageBox.Show($"{disconnectedPlayer} has disconnected from the game.\nThe match has been ended.",
+                                           "Player Disconnected",
+                                           MessageBoxButtons.OK,
                                            MessageBoxIcon.Information);
-                            
+
                             // Return to menu
                             this.Hide();
                             Menu Form1 = new Menu(playerName, TcpClient);
@@ -1097,6 +1104,24 @@ namespace UNO
                         }));
                         Console.WriteLine("[DEBUG] Received HideCatchWindow, hiding Catch button on this client");
                     }
+                    else if (msg.StartsWith("PlayerNames: "))
+                    {
+                        // Ví dụ msg = "PlayerNames: Alice|Bob|Charlie|David"
+                        var parts = msg.Substring("PlayerNames: ".Length).Split('|');
+                        if (parts.Length == 4)
+                        {
+                            // NameMe
+                            NameMe.Invoke((Action)(() => NameMe.Text = parts[myPlayerId - 1]));
+                            // 3 người còn lại, thứ tự là (myPlayerId % 4) + i
+                            for (int i = 1; i <= 3; i++)
+                            {
+                                int idx = (myPlayerId - 1 + i) % 4;
+                                var lbl = this.Controls[$"Name{i}"] as Label;
+                                lbl?.Invoke((Action)(() => lbl.Text = parts[idx]));
+                            }
+                        }
+                    }
+
 
 
 
@@ -1210,19 +1235,19 @@ namespace UNO
             try
             {
                 Console.WriteLine("[DEBUG] Arena form is closing, handling disconnection...");
-                
+
                 // Send disconnect message to server
                 if (stream != null && TcpClient != null && TcpClient.Connected)
                 {
                     string disconnectMessage = $"Disconnect: {playerName}\n";
                     byte[] buffer = Encoding.UTF8.GetBytes(disconnectMessage);
                     await stream.WriteAsync(buffer, 0, buffer.Length);
-                    
+
                     // Close the connection
                     stream.Close();
                     TcpClient.Close();
                 }
-                
+
                 Console.WriteLine("[DEBUG] Client disconnection handled successfully");
             }
             catch (Exception ex)
@@ -1231,6 +1256,19 @@ namespace UNO
             }
         }
 
+        private void Name3_Click(object sender, EventArgs e)
+        {
 
+        }
+
+        private void pictureBox2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void pictureBox1_Click_1(object sender, EventArgs e)
+        {
+
+        }
     }
 }

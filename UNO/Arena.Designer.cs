@@ -67,6 +67,12 @@
             resultLabel = new Label();
             scoreLabel = new Label();
             backBtn = new Button();
+            pictureBox1 = new PictureBox();
+            pictureBox2 = new PictureBox();
+            NameMe = new Label();
+            Name1 = new Label();
+            Name2 = new Label();
+            Name3 = new Label();
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).BeginInit();
@@ -84,6 +90,8 @@
             ((System.ComponentModel.ISupportInitialize)isPlay2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)isPlay3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)isPlay4).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
             SuspendLayout();
             // 
             // MiddlePictureBox
@@ -118,7 +126,7 @@
             Enemy.BackColor = Color.Transparent;
             Enemy.Cursor = Cursors.Hand;
             Enemy.Image = Properties.Resources.avatar_removebg_preview;
-            Enemy.Location = new Point(729, 3);
+            Enemy.Location = new Point(491, 18);
             Enemy.Name = "Enemy";
             Enemy.Size = new Size(80, 80);
             Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -273,7 +281,7 @@
             // PreviousButton
             // 
             PreviousButton.Cursor = Cursors.Hand;
-            PreviousButton.Location = new Point(106, 373);
+            PreviousButton.Location = new Point(101, 367);
             PreviousButton.Name = "PreviousButton";
             PreviousButton.Size = new Size(37, 29);
             PreviousButton.TabIndex = 13;
@@ -285,7 +293,7 @@
             // NextButton
             // 
             NextButton.Cursor = Cursors.Hand;
-            NextButton.Location = new Point(717, 373);
+            NextButton.Location = new Point(729, 367);
             NextButton.Name = "NextButton";
             NextButton.Size = new Size(37, 29);
             NextButton.TabIndex = 14;
@@ -474,7 +482,7 @@
             resultLabel.BackColor = Color.Transparent;
             resultLabel.Font = new Font("Segoe UI", 19.8000011F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
             resultLabel.ForeColor = SystemColors.Window;
-            resultLabel.Location = new Point(358, 16);
+            resultLabel.Location = new Point(341, 16);
             resultLabel.Name = "resultLabel";
             resultLabel.Size = new Size(164, 46);
             resultLabel.TabIndex = 34;
@@ -508,6 +516,83 @@
             backBtn.Visible = false;
             backBtn.Click += backBtn_Click;
             // 
+            // pictureBox1
+            // 
+            pictureBox1.BackColor = Color.Transparent;
+            pictureBox1.Cursor = Cursors.Hand;
+            pictureBox1.Image = Properties.Resources.avatar_removebg_preview;
+            pictureBox1.Location = new Point(200, 143);
+            pictureBox1.Name = "pictureBox1";
+            pictureBox1.Size = new Size(80, 80);
+            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+            pictureBox1.TabIndex = 37;
+            pictureBox1.TabStop = false;
+            pictureBox1.Visible = false;
+            pictureBox1.Click += pictureBox1_Click_1;
+            // 
+            // pictureBox2
+            // 
+            pictureBox2.BackColor = Color.Transparent;
+            pictureBox2.Cursor = Cursors.Hand;
+            pictureBox2.Image = Properties.Resources.avatar_removebg_preview;
+            pictureBox2.Location = new Point(763, 143);
+            pictureBox2.Name = "pictureBox2";
+            pictureBox2.Size = new Size(80, 80);
+            pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
+            pictureBox2.TabIndex = 38;
+            pictureBox2.TabStop = false;
+            pictureBox2.Visible = false;
+            pictureBox2.Click += pictureBox2_Click;
+            // 
+            // NameMe
+            // 
+            NameMe.AutoSize = true;
+            NameMe.BackColor = Color.Transparent;
+            NameMe.ForeColor = Color.White;
+            NameMe.Location = new Point(62, 399);
+            NameMe.Name = "NameMe";
+            NameMe.Size = new Size(105, 20);
+            NameMe.TabIndex = 39;
+            NameMe.Text = "zzzsatthuzzzzz";
+            NameMe.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // Name1
+            // 
+            Name1.AutoSize = true;
+            Name1.BackColor = Color.Transparent;
+            Name1.ForeColor = Color.White;
+            Name1.Location = new Point(754, 120);
+            Name1.Name = "Name1";
+            Name1.Size = new Size(107, 20);
+            Name1.TabIndex = 40;
+            Name1.Text = "zzzzSatthuzzzz";
+            Name1.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // Name2
+            // 
+            Name2.AutoSize = true;
+            Name2.BackColor = Color.Transparent;
+            Name2.ForeColor = SystemColors.ButtonHighlight;
+            Name2.Location = new Point(479, 0);
+            Name2.Name = "Name2";
+            Name2.Size = new Size(107, 20);
+            Name2.TabIndex = 41;
+            Name2.Text = "zzzzSatthuzzzz";
+            Name2.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // Name3
+            // 
+            Name3.AutoSize = true;
+            Name3.BackColor = Color.Transparent;
+            Name3.ForeColor = Color.White;
+            Name3.Location = new Point(193, 120);
+            Name3.Name = "Name3";
+            Name3.Size = new Size(107, 20);
+            Name3.TabIndex = 42;
+            Name3.Text = "zzzzSatthuzzzz";
+            Name3.TextAlign = ContentAlignment.MiddleCenter;
+            Name3.Click += Name3_Click;
+            // 
             // Arena
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -515,6 +600,12 @@
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(875, 511);
+            Controls.Add(Name3);
+            Controls.Add(Name2);
+            Controls.Add(Name1);
+            Controls.Add(NameMe);
+            Controls.Add(pictureBox2);
+            Controls.Add(pictureBox1);
             Controls.Add(backBtn);
             Controls.Add(scoreLabel);
             Controls.Add(resultLabel);
@@ -570,6 +661,8 @@
             ((System.ComponentModel.ISupportInitialize)isPlay2).EndInit();
             ((System.ComponentModel.ISupportInitialize)isPlay3).EndInit();
             ((System.ComponentModel.ISupportInitialize)isPlay4).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox2).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -615,5 +708,11 @@
         private Label resultLabel;
         private Label scoreLabel;
         private Button backBtn;
+        private PictureBox pictureBox1;
+        private PictureBox pictureBox2;
+        private Label NameMe;
+        private Label Name1;
+        private Label Name2;
+        private Label Name3;
     }
 }

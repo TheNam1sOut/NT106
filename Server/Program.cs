@@ -533,6 +533,10 @@ public class Server
                             Broadcast(room, $"Turn: {room.currentTurn}\n");
                             Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
                             SenUnoCardTop(room, "");
+                            // Tạo chuỗi tên, giữ đúng thứ tự 1→4
+                            string namesMsg = $"PlayerNames: {room.player[1].Item1}|{room.player[2].Item1}|{room.player[3].Item1}|{room.player[4].Item1}\n";
+                            Broadcast(room, namesMsg);
+
                             SendInitialHand(room);
                         }
                     }
