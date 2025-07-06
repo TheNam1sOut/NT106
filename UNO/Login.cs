@@ -12,6 +12,7 @@ namespace UNO
         public Login()
         {
             InitializeComponent();
+            this.FormClosing += Login_FormClosing;
         }
 
         private async Task ConnectServer()
@@ -87,10 +88,31 @@ namespace UNO
 
         }
 
-        protected override void OnFormClosing(FormClosingEventArgs e)
+        private async void Login_FormClosing(object sender, FormClosingEventArgs e)
         {
-            player?.Close();
-            base.OnFormClosing(e);
+            try
+            {
+                Console.WriteLine("[DEBUG] Login form is closing, handling disconnection...");
+                
+                // Send disconnect message to server if connected
+                if (player != null && player.Connected)
+                {
+                    NetworkStream stream = player.GetStream();
+                    string disconnectMessage = $"Disconnect: {textBox1.Text.Trim()}\n";
+                    byte[] buffer = Encoding.UTF8.GetBytes(disconnectMessage);
+                    stream.Write(buffer, 0, buffer.Length);
+                    
+                    // Close the connection
+                    stream.Close();
+                    player.Close();
+                }
+                
+                Console.WriteLine("[DEBUG] Login form disconnection handled successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Error during login form closing: {ex.Message}");
+            }
         }
     }
 }

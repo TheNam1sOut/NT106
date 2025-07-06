@@ -31,6 +31,8 @@ public class Server
     private int byteRecv = 0;
     private byte[] buffer = new byte[1024];
     private readonly ConcurrentDictionary<Socket, (string Uid, string Username)> authenticatedPlayers = new ConcurrentDictionary<Socket, (string, string)>();
+    // Track client threads and cancellation tokens for proper cleanup
+    private readonly ConcurrentDictionary<Socket, (Thread Thread, CancellationTokenSource CancellationTokenSource)> clientThreads = new ConcurrentDictionary<Socket, (Thread, CancellationTokenSource)>();
     //lưu trữ danh sách phòng để chứa người chơi
     List<Room> roomList = new List<Room>();
     private void RefillDrawPile(Room room)
@@ -249,8 +251,10 @@ public class Server
     }
 
 
-    private async void HandleClient(Socket acceptedClient)
+    private async void HandleClient(Socket acceptedClient, CancellationToken cancellationToken)
     {
+        Console.WriteLine($"[DEBUG] Client thread started for socket {acceptedClient.Handle}");
+        
         int currentPlayerId = 0;
         Room rooms = null;
         string username = "";
@@ -263,10 +267,17 @@ public class Server
             username = playerInfo.Username;
         }
 
-        while (acceptedClient.Connected)
+        while (acceptedClient.Connected && !cancellationToken.IsCancellationRequested)
         {
             try
             {
+                // Check for cancellation before receiving data
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Console.WriteLine($"[DEBUG] Cancellation requested for client thread");
+                    break;
+                }
+                
                 byteRecv = acceptedClient.Receive(buffer);
                 if (byteRecv == 0)
                 {
@@ -472,7 +483,7 @@ public class Server
                     //nếu chưa tìm thấy phòng, tạo phòng mới cho người chơi
                     if (checkRoomInfo.Length <= 0)
                     {
-                        int roomCount = roomList.Count; //id phòng mới
+                        int roomCount = FindNextAvailableRoomId(); //id phòng mới
                         Room newRoom = new Room(roomCount);
                         newRoom.player[1] = (username, acceptedClient);
                         newRoom.ClientId[acceptedClient] = 1;
@@ -511,7 +522,7 @@ public class Server
 
                         if (room.rommbg == 0 && room.sumcountrd == 4)
                         {
-                            Console.WriteLine(room.rommbg + room.sumcountrd);
+                            Console.WriteLine($"[DEBUG] Starting new game in room {room.id}. rommbg={room.rommbg}, sumcountrd={room.sumcountrd}");
                             room.rommbg = 1;
                             foreach (var sock in room.ClientId.Keys)
                             {
@@ -523,8 +534,6 @@ public class Server
                             Broadcast(room, $"PendingDraw: {room.pendingDrawCards}\n");
                             SenUnoCardTop(room, "");
                             SendInitialHand(room);
-
-
                         }
                     }
                     Console.WriteLine("ready");
@@ -647,8 +656,8 @@ public class Server
                     {
                         // Xác định người thắng và thông báo cho tất cả client
                         string winner = room.player[playerId].Item1;
+                        DeleteRoom(room);
                         Broadcast(room, $"PlayerWin: {winner}\n");
-                        // (Không cần xử lý catch vì game đã kết thúc)
                     }
 
                     // Sau khi Broadcast Turn và PendingDraw
@@ -745,39 +754,38 @@ public class Server
                     string pendingMessage = $"Chat: {playerName}|{msgContent}\n";
                     Broadcast(room, pendingMessage);
                 }
+                else if (message.StartsWith("Disconnect: "))
+                {
+                    await HandleClientDisconnection(acceptedClient, username, authenticatedUserUid);
+                    return; // Exit the loop since client is disconnecting
+                }
 
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                // Check if this is a cancellation exception
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Console.WriteLine($"[DEBUG] Thread cancelled, exiting gracefully");
+                    break;
+                }
+                
+                Console.WriteLine($"[ERROR] Client connection error: {ex.Message}");
+                // Handle unexpected disconnection
+                await HandleClientDisconnection(acceptedClient, username, authenticatedUserUid);
             }
         }
-        Console.WriteLine($"{(username ?? "Một người dùng không xác định")} đã ngắt kết nối!");
-
-        // Cập nhật trạng thái Firestore thành offline
-        if (!string.IsNullOrEmpty(authenticatedUserUid))
+        
+        // Final cleanup when client thread ends
+        Console.WriteLine($"[DEBUG] Client thread ending for {username}");
+        
+        // Clean up thread tracking if not already done
+        if (clientThreads.TryRemove(acceptedClient, out var threadInfo))
         {
-            try
-            {
-                DocumentReference userDoc = db.Collection("players").Document(authenticatedUserUid);
-                await userDoc.UpdateAsync("status", 0);
-                Console.WriteLine($"Đã cập nhật trạng thái thành offline cho người dùng: {authenticatedUserUid}");
-            }
-            catch (Exception dbEx)
-            {
-                Console.WriteLine($"Lỗi khi cập nhật trạng thái offline cho {authenticatedUserUid}: {dbEx.Message}");
-            }
+            Console.WriteLine($"[DEBUG] Removed client thread tracking for {username}");
+            // Dispose the cancellation token source
+            threadInfo.CancellationTokenSource.Dispose();
         }
-        else
-        {
-            Console.WriteLine("Không thể cập nhật trạng thái thành offline: Username không xác định cho client đã ngắt kết nối này.");
-        }
-
-        // Xóa client khỏi từ điển authenticatedPlayers
-        authenticatedPlayers.TryRemove(acceptedClient, out _);
-
-        // Đóng socket
-        acceptedClient.Close();
     }
 
 
@@ -788,6 +796,244 @@ public class Server
         foreach (var sock in room.ClientId.Keys)
             sock.Send(data);
     }
+
+    private void DeleteRoom(Room oldRoom)
+    {
+        Console.WriteLine($"[DEBUG] Deleting room {oldRoom.id} after game completion");
+        
+        try
+        {
+            // Simply remove the old room from the room list
+            roomList.Remove(oldRoom);
+            
+            Console.WriteLine($"[DEBUG] Room {oldRoom.id} has been deleted successfully");
+            Console.WriteLine($"[DEBUG] Remaining rooms: {roomList.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Failed to delete room {oldRoom.id}: {ex.Message}");
+            Console.WriteLine($"[ERROR] Stack trace: {ex.StackTrace}");
+        }
+    }
+
+    private int FindNextAvailableRoomId()
+    {
+        // Find the lowest available room ID
+        int nextId = 0;
+        while (roomList.Any(room => room.id == nextId))
+        {
+            nextId++;
+        }
+        
+        Console.WriteLine($"[DEBUG] Next available room ID: {nextId}");
+        return nextId;
+    }
+
+    private async Task HandleClientDisconnection(Socket clientSocket, string username, string authenticatedUserUid)
+    {
+        Console.WriteLine($"[DEBUG] Handling disconnection for {username}");
+        
+        try
+        {
+            // Find the room the client is in
+            Room room = FindRoombyClientID(clientSocket);
+            
+            if (room != null)
+            {
+                int playerId = room.ClientId[clientSocket];
+                string playerName = room.player[playerId].Item1;
+                
+                Console.WriteLine($"[DEBUG] Player {playerName} (ID: {playerId}) is disconnecting from room {room.id}");
+                
+                // Check if the game is in progress
+                if (room.rommbg == 1)
+                {
+                    // Game is in progress, handle as player leaving during match
+                    await HandlePlayerLeavingDuringMatch(room, playerId, playerName, authenticatedUserUid);
+                }
+                else
+                {
+                    // Game hasn't started yet, just remove the player
+                    RemovePlayerFromRoom(room, playerId, clientSocket);
+                }
+            }
+            
+            // Update database status to offline
+            if (!string.IsNullOrEmpty(authenticatedUserUid))
+            {
+                try
+                {
+                    DocumentReference userDoc = db.Collection("players").Document(authenticatedUserUid);
+                    await userDoc.UpdateAsync("status", 0);
+                    Console.WriteLine($"Đã cập nhật trạng thái thành offline cho người dùng: {authenticatedUserUid}");
+                }
+                catch (Exception dbEx)
+                {
+                    Console.WriteLine($"Lỗi khi cập nhật trạng thái offline cho {authenticatedUserUid}: {dbEx.Message}");
+                }
+            }
+            
+            // Remove from authenticated players
+            authenticatedPlayers.TryRemove(clientSocket, out _);
+            
+            // Terminate and remove the client thread
+            if (clientThreads.TryRemove(clientSocket, out var threadInfo))
+            {
+                Console.WriteLine($"[DEBUG] Terminating client thread for {username}");
+                
+                // Cancel the cancellation token to signal the thread to stop
+                threadInfo.CancellationTokenSource.Cancel();
+                
+                // Check if thread is still alive and wait for it to terminate
+                if (threadInfo.Thread.IsAlive)
+                {
+                    try
+                    {
+                        // Wait for the thread to terminate gracefully (max 5 seconds)
+                        if (threadInfo.Thread.Join(5000))
+                        {
+                            Console.WriteLine($"[DEBUG] Client thread terminated gracefully for {username}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[WARNING] Client thread did not terminate gracefully for {username}, forcing termination");
+                            // Force termination if graceful termination fails
+                            threadInfo.Thread.Interrupt();
+                        }
+                    }
+                    catch (Exception threadEx)
+                    {
+                        Console.WriteLine($"[ERROR] Error terminating client thread for {username}: {threadEx.Message}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[DEBUG] Client thread already terminated for {username}");
+                }
+                
+                // Dispose the cancellation token source
+                threadInfo.CancellationTokenSource.Dispose();
+            }
+            else
+            {
+                Console.WriteLine($"[WARNING] Client thread not found for {username}");
+            }
+            
+            // Close the socket
+            clientSocket.Close();
+            
+            Console.WriteLine($"[DEBUG] Disconnection handling completed for {username}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Error handling client disconnection: {ex.Message}");
+            Console.WriteLine($"[ERROR] Stack trace: {ex.StackTrace}");
+        }
+    }
+
+    private async Task HandlePlayerLeavingDuringMatch(Room room, int leavingPlayerId, string leavingPlayerName, string authenticatedUserUid)
+    {
+        Console.WriteLine($"[DEBUG] Player {leavingPlayerName} left during match in room {room.id}");
+        
+        // Get remaining players
+        var remainingPlayers = new List<(int id, string name, Socket socket)>();
+        foreach (var kvp in room.player)
+        {
+            int playerId = kvp.Key;
+            string playerName = kvp.Value.Item1;
+            Socket socket = kvp.Value.Item2;
+            
+            if (playerId != leavingPlayerId && socket != null && socket.Connected)
+            {
+                remainingPlayers.Add((playerId, playerName, socket));
+            }
+        }
+        
+        // Remove the leaving player from the room
+        RemovePlayerFromRoom(room, leavingPlayerId, room.player[leavingPlayerId].Item2);
+        
+        // If there are remaining players, notify them about the disconnection
+        if (remainingPlayers.Count > 0)
+        {
+            Console.WriteLine($"[DEBUG] {remainingPlayers.Count} players remaining, notifying about disconnection");
+            
+            // Notify all remaining players about the disconnection
+            foreach (var (playerId, playerName, socket) in remainingPlayers)
+            {
+                try
+                {
+                    // Send disconnection notification message
+                    string disconnectMessage = $"PlayerDisconnected: {leavingPlayerName}\n";
+                    byte[] buffer = Encoding.UTF8.GetBytes(disconnectMessage);
+                    socket.Send(buffer);
+                    
+                    Console.WriteLine($"[DEBUG] Notified player {playerName} about disconnection");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ERROR] Error notifying player {playerName}: {ex.Message}");
+                }
+            }
+        }
+        
+        // Delete the room since the match is over
+        Console.WriteLine($"[DEBUG] Deleting room {room.id} due to player disconnection");
+        DeleteRoom(room);
+    }
+
+    private void RemovePlayerFromRoom(Room room, int playerId, Socket clientSocket)
+    {
+        try
+        {
+            // Remove from ClientId dictionary
+            room.ClientId.Remove(clientSocket);
+            
+            // Clear the player slot
+            room.player[playerId] = (string.Empty, null);
+            
+            // Reset ready status for this player
+            room.countrd[playerId] = 0;
+            room.sumcountrd = room.countrd[1] + room.countrd[2] + room.countrd[3] + room.countrd[4];
+            
+            // Clear player hand
+            if (room.playerHands.ContainsKey(playerId))
+            {
+                room.playerHands[playerId].Clear();
+            }
+            
+            // Reset Uno called status
+            room.UnoCalled[playerId] = false;
+            
+            Console.WriteLine($"[DEBUG] Removed player {playerId} from room {room.id}");
+            
+            // Update ready status for remaining players
+            string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
+            string messageToClients = $"isPlay: {status}\n";
+            Broadcast(room, messageToClients);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Error removing player from room: {ex.Message}");
+        }
+    }
+
+    private void LogThreadStatistics()
+    {
+        int activeThreads = clientThreads.Count(kvp => kvp.Value.Thread.IsAlive);
+        int totalThreads = clientThreads.Count;
+        
+        Console.WriteLine($"[DEBUG] Thread Statistics - Active: {activeThreads}, Total: {totalThreads}");
+        
+        // Log details of each thread
+        foreach (var kvp in clientThreads)
+        {
+            Socket socket = kvp.Key;
+            var threadInfo = kvp.Value;
+            Console.WriteLine($"[DEBUG] Thread {threadInfo.Thread.ManagedThreadId} - Alive: {threadInfo.Thread.IsAlive}, Socket: {socket.Connected}");
+        }
+    }
+
+
 
     private bool IsPlayable(string card, Room room)
     {
@@ -936,7 +1182,9 @@ public class Server
 
                 //tạo một luồng mới cho từng client được kết nối
                 //nếu không thì server không thể giao tiếp với nhiều hơn 1 client
-                Thread clientThread = new Thread(() => HandleClient(acceptedClient));
+                var cancellationTokenSource = new CancellationTokenSource();
+                Thread clientThread = new Thread(() => HandleClient(acceptedClient, cancellationTokenSource.Token));
+                clientThreads.TryAdd(acceptedClient, (clientThread, cancellationTokenSource));
                 clientThread.Start();
             }
             catch (Exception ex)
@@ -964,5 +1212,70 @@ public class Server
         serverThread = new Thread(ServerThread);
         serverThread.Start();
         TestFirestoreConnection();
+    }
+
+    public void StopServer()
+    {
+        Console.WriteLine("[DEBUG] Stopping server and cleaning up client threads...");
+        
+        // Stop accepting new connections
+        isRunning = false;
+        
+        // Close server socket
+        if (serverSocket != null && serverSocket.Connected)
+        {
+            serverSocket.Close();
+        }
+        
+        // Terminate all client threads
+        foreach (var kvp in clientThreads)
+        {
+            Socket socket = kvp.Key;
+            var threadInfo = kvp.Value;
+            
+            try
+            {
+                // Cancel the cancellation token to signal the thread to stop
+                threadInfo.CancellationTokenSource.Cancel();
+                
+                if (threadInfo.Thread.IsAlive)
+                {
+                    Console.WriteLine($"[DEBUG] Terminating client thread {threadInfo.Thread.ManagedThreadId}");
+                    
+                    // Wait for graceful termination
+                    if (!threadInfo.Thread.Join(3000)) // 3 second timeout
+                    {
+                        Console.WriteLine($"[WARNING] Forcing termination of client thread {threadInfo.Thread.ManagedThreadId}");
+                        threadInfo.Thread.Interrupt();
+                    }
+                }
+                
+                // Dispose the cancellation token source
+                threadInfo.CancellationTokenSource.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Error terminating client thread {threadInfo.Thread.ManagedThreadId}: {ex.Message}");
+            }
+            
+            try
+            {
+                if (socket.Connected)
+                {
+                    socket.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Error closing client socket: {ex.Message}");
+            }
+        }
+        
+        // Clear collections
+        clientThreads.Clear();
+        authenticatedPlayers.Clear();
+        roomList.Clear();
+        
+        Console.WriteLine("[DEBUG] Server stopped and all resources cleaned up");
     }
 }

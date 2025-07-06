@@ -1,20 +1,21 @@
-﻿using System;
+﻿using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Drawing.Imaging;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Timer = System.Windows.Forms.Timer;
-using System.Net.Sockets;
-using System.IO;
-using Microsoft.IdentityModel.Tokens;
 
 namespace UNO
 {
@@ -22,6 +23,7 @@ namespace UNO
     {
         private NetworkStream stream;
         private string CardTop;
+        public string playerName;
         public TcpClient TcpClient;
         private Panel emojiPanel;
         private Timer blinkTimer;
@@ -246,10 +248,13 @@ namespace UNO
             chatBox.Visible = false;
             chatInput.Visible = false;
 
+            this.playerName = playerName;
             this.TcpClient = playerSocket;
             //định nghĩa các hàm khi vào trận
             LoadCards();
 
+            // Add form closing event handler
+            this.FormClosing += Arena_FormClosing;
 
             this.Shown += Arena_Shown;
         }
@@ -425,8 +430,8 @@ namespace UNO
                 foreach (var kv in new Dictionary<char, string>
                  { {'R',"Đỏ"}, {'G',"Xanh lá"}, {'B',"Xanh dương"}, {'Y',"Vàng"} })
                 {
-                    var btn = new Button { Text = kv.Value, Tag = kv.Key, AutoSize = true };
-                    btn.Click += (s, e) => { f.Tag = ((Button)s).Tag; f.Close(); };
+                    var btn = new System.Windows.Forms.Button { Text = kv.Value, Tag = kv.Key, AutoSize = true };
+                    btn.Click += (s, e) => { f.Tag = ((System.Windows.Forms.Button)s).Tag; f.Close(); };
                     panel.Controls.Add(btn);
                 }
                 f.Controls.Add(panel);
@@ -636,7 +641,7 @@ namespace UNO
                 chatInput.Text += lbl.Text;
                 chatInput.Focus();
                 chatInput.SelectionStart = chatInput.Text.Length;
-                
+
                 // Hide emoji panel after selection
                 emojiPanel.Visible = false;
             }
@@ -997,10 +1002,55 @@ namespace UNO
 
                     else if (msg.StartsWith("PlayerWin: "))
                     {
-                        string winner = msg.Substring("PlayerWin: ".Length);
+                        // lưu mảng toàn bộ các controls trong form arena
+                        var labelControls = new[] { TimeMe, TimeEnemy };
+
+                        var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
+                        var pictureBoxControls = new[]
+                        {
+                            MiddlePictureBox,
+                            AvatarPlayer,
+                            Enemy,
+                            setting,
+                            imojiButon,
+                            ClockIcon,
+                            clock1,
+                            Card1,
+                            Card2,
+                            Card3,
+                            Card4,
+                            Card5,
+                            Card6,
+                        };
+                        string winner = msg.Substring("PlayerWin: ".Length).Trim();
+                        //this.Invoke((Action)(() =>
+                        //    MessageBox.Show($"{winner} đã chiến thắng", "Kết thúc trò chơi", MessageBoxButtons.OK)
+                        //));
                         this.Invoke((Action)(() =>
-                            MessageBox.Show($"{winner} đã chiến thắng", "Kết thúc trò chơi", MessageBoxButtons.OK)
-                        ));
+                        {
+                            foreach (var control in pictureBoxControls)
+                            {
+                                control.Visible = false;
+                            }
+                            foreach (var control in buttonControls)
+                            {
+                                control.Visible = false;
+                            }
+                            foreach (var control in labelControls)
+                            {
+                                control.Visible = false;
+                            }
+                            chatBox.Visible = false;
+                            chatInput.Visible = false;
+
+                            //hiển thị thông tin liên quan đến kết quả
+                            resultLabel.Text = $"{winner} đã chiến thắng!";
+                            resultLabel.Visible = true;
+                            scoreLabel.Visible = true;
+                            backBtn.Visible = true;
+
+                            
+                        }));
                     }
                     else if (msg.StartsWith("AutoDrawCount: "))
                     {
@@ -1022,6 +1072,23 @@ namespace UNO
                             chatBox.AppendText($"{playerName}: {msgContent}\n");
                         }));
                     }
+                    else if (msg.StartsWith("PlayerDisconnected: "))
+                    {
+                        string disconnectedPlayer = msg.Substring("PlayerDisconnected: ".Length).Trim();
+                        this.Invoke((Action)(() =>
+                        {
+                            MessageBox.Show($"{disconnectedPlayer} has disconnected from the game.\nThe match has been ended.", 
+                                           "Player Disconnected", 
+                                           MessageBoxButtons.OK, 
+                                           MessageBoxIcon.Information);
+                            
+                            // Return to menu
+                            this.Hide();
+                            Menu Form1 = new Menu(playerName, TcpClient);
+                            Form1.Show();
+                        }));
+                    }
+
 
                 }
 
@@ -1120,6 +1187,40 @@ namespace UNO
         {
 
         }
+
+        private void backBtn_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            Menu Form1 = new Menu(playerName, TcpClient);
+            Form1.Show();
+        }
+
+        private async void Arena_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                Console.WriteLine("[DEBUG] Arena form is closing, handling disconnection...");
+                
+                // Send disconnect message to server
+                if (stream != null && TcpClient != null && TcpClient.Connected)
+                {
+                    string disconnectMessage = $"Disconnect: {playerName}\n";
+                    byte[] buffer = Encoding.UTF8.GetBytes(disconnectMessage);
+                    await stream.WriteAsync(buffer, 0, buffer.Length);
+                    
+                    // Close the connection
+                    stream.Close();
+                    TcpClient.Close();
+                }
+                
+                Console.WriteLine("[DEBUG] Client disconnection handled successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Error during form closing: {ex.Message}");
+            }
+        }
+
 
     }
 }

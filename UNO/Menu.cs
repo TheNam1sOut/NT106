@@ -25,6 +25,12 @@ namespace UNO
             InitializeComponent();
             username = playerName;
             tcpPlayer = playerSocket;
+            
+            // Add form closing event handler
+            this.FormClosing += Menu_FormClosing;
+            
+            // Add click event handler for Thoát button
+            button3.Click += ThoatButton_Click;
         }
 
         //vào một phòng mới với nút này
@@ -67,6 +73,64 @@ namespace UNO
             {
                 MessageBox.Show($"Error: {ex.Message}");
             }  
+        }
+
+        private async void Menu_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                Console.WriteLine("[DEBUG] Menu form is closing, handling disconnection...");
+                
+                // Send disconnect message to server
+                if (tcpPlayer != null && tcpPlayer.Connected)
+                {
+                    NetworkStream stream = tcpPlayer.GetStream();
+                    string disconnectMessage = $"Disconnect: {username}\n";
+                    byte[] buffer = Encoding.UTF8.GetBytes(disconnectMessage);
+                    await stream.WriteAsync(buffer, 0, buffer.Length);
+                    
+                    // Close the connection
+                    stream.Close();
+                    tcpPlayer.Close();
+                }
+                
+                Console.WriteLine("[DEBUG] Menu form disconnection handled successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Error during menu form closing: {ex.Message}");
+            }
+        }
+
+        private async void ThoatButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Console.WriteLine("[DEBUG] Thoát button clicked, handling disconnection...");
+                
+                // Send disconnect message to server
+                if (tcpPlayer != null && tcpPlayer.Connected)
+                {
+                    NetworkStream stream = tcpPlayer.GetStream();
+                    string disconnectMessage = $"Disconnect: {username}\n";
+                    byte[] buffer = Encoding.UTF8.GetBytes(disconnectMessage);
+                    await stream.WriteAsync(buffer, 0, buffer.Length);
+                    
+                    // Close the connection
+                    stream.Close();
+                    tcpPlayer.Close();
+                }
+                
+                Console.WriteLine("[DEBUG] Thoát button disconnection handled successfully");
+                
+                // Close the form
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Error during Thoát button click: {ex.Message}");
+                MessageBox.Show($"Error during logout: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
