@@ -726,6 +726,8 @@ public class Server
                             // Reset lại PendingDraw về 0 và thông báo cho tất cả client
                             room.pendingDrawCards = 0;
                             Broadcast(room, $"PendingDraw: 0\n");
+                            remaining = room.playerHands[nextId].Count;
+                            Broadcast(room, $"Remaining: {nextId}:{remaining}\n");
                         }
                     }
 
