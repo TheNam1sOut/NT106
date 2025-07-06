@@ -25,10 +25,10 @@ namespace UNO
             InitializeComponent();
             username = playerName;
             tcpPlayer = playerSocket;
-            
+
             // Add form closing event handler
             this.FormClosing += Menu_FormClosing;
-            
+
             // Add click event handler for Thoát button
             button3.Click += ThoatButton_Click;
         }
@@ -62,7 +62,7 @@ namespace UNO
                             MessageBox.Show($"Success added to new room: {message.Substring(6).Trim()}");
                             Arena form1 = new Arena(username, tcpPlayer, message.Substring(6).Trim());
                             this.Hide();
-                            form1.Show();                        
+                            form1.Show();
                             break;
                         }
                     }
@@ -72,7 +72,7 @@ namespace UNO
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}");
-            }  
+            }
         }
 
         private async void Menu_FormClosing(object sender, FormClosingEventArgs e)
@@ -80,7 +80,7 @@ namespace UNO
             try
             {
                 Console.WriteLine("[DEBUG] Menu form is closing, handling disconnection...");
-                
+
                 // Send disconnect message to server
                 if (tcpPlayer != null && tcpPlayer.Connected)
                 {
@@ -88,12 +88,12 @@ namespace UNO
                     string disconnectMessage = $"Disconnect: {username}\n";
                     byte[] buffer = Encoding.UTF8.GetBytes(disconnectMessage);
                     await stream.WriteAsync(buffer, 0, buffer.Length);
-                    
+
                     // Close the connection
                     stream.Close();
                     tcpPlayer.Close();
                 }
-                
+
                 Console.WriteLine("[DEBUG] Menu form disconnection handled successfully");
             }
             catch (Exception ex)
@@ -107,7 +107,7 @@ namespace UNO
             try
             {
                 Console.WriteLine("[DEBUG] Thoát button clicked, handling disconnection...");
-                
+
                 // Send disconnect message to server
                 if (tcpPlayer != null && tcpPlayer.Connected)
                 {
@@ -115,14 +115,14 @@ namespace UNO
                     string disconnectMessage = $"Disconnect: {username}\n";
                     byte[] buffer = Encoding.UTF8.GetBytes(disconnectMessage);
                     await stream.WriteAsync(buffer, 0, buffer.Length);
-                    
+
                     // Close the connection
                     stream.Close();
                     tcpPlayer.Close();
                 }
-                
+
                 Console.WriteLine("[DEBUG] Thoát button disconnection handled successfully");
-                
+
                 // Close the form
                 this.Close();
             }
@@ -131,6 +131,13 @@ namespace UNO
                 Console.WriteLine($"[ERROR] Error during Thoát button click: {ex.Message}");
                 MessageBox.Show($"Error during logout: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            Rank rank=new Rank(username,tcpPlayer);
+            rank.Show();
         }
     }
 }

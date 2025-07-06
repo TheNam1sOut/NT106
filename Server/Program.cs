@@ -65,6 +65,7 @@ public class Server
             list.RemoveAt(idx);
         }
     }
+
     private void SenUnoCardTop(Room room, string unused)
     {
         if (room.Dataqueue1.Count == 0) return;
@@ -72,6 +73,44 @@ public class Server
         Console.WriteLine($"[DEBUG][CardTop] Card: {top}, Màu hiện tại: {room.pendingWildColor}");
         foreach (var sock in room.ClientId.Keys)
             sock.Send(Encoding.UTF8.GetBytes($"CardTop: {top}|{room.pendingWildColor}\n"));
+    }
+    public async Task UpdateAllPlayersStatusToOffline()
+    {
+        if (db == null)
+        {
+            Console.WriteLine("[ERROR] Firestore database not initialized. Cannot update player statuses.");
+            return;
+        }
+
+        try
+        {
+            Console.WriteLine("[INFO] Updating all player statuses to offline (0)...");
+            CollectionReference playersRef = db.Collection("players");
+            QuerySnapshot snapshot = await playersRef.GetSnapshotAsync();
+
+            if (snapshot.Documents.Count == 0)
+            {
+                Console.WriteLine("[INFO] No player documents found to update.");
+            }
+            else
+            {
+                foreach (DocumentSnapshot document in snapshot.Documents)
+                {
+                    if (document.Exists)
+                    {
+                        DocumentReference playerDocRef = playersRef.Document(document.Id);
+                        await playerDocRef.UpdateAsync("status", 0);
+                        
+                    }
+                }
+           
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Failed to update all player statuses to offline: {ex.Message}");
+            Console.WriteLine($"[ERROR] Stack trace: {ex.StackTrace}");
+        }
     }
 
     public Server()
@@ -277,7 +316,7 @@ public class Server
                     Console.WriteLine($"[DEBUG] Cancellation requested for client thread");
                     break;
                 }
-                
+
                 byteRecv = acceptedClient.Receive(buffer);
                 if (byteRecv == 0)
                 {
@@ -367,7 +406,8 @@ public class Server
                                     { "passwordHash", hashedPassword },
                                     { "status", 1 }, // Set status to online upon creation
                                     { "lastLogin", FieldValue.ServerTimestamp },
-                                    { "createdAt", FieldValue.ServerTimestamp }
+                                    { "createdAt", FieldValue.ServerTimestamp },
+                                    { "points", 0 } // Initialize points to 0
                                 };
 
                                 await userDocRef.SetAsync(newUserData);
@@ -671,12 +711,12 @@ public class Server
                     {
                         // Xác định người thắng và thông báo cho tất cả client
                         string winner = room.player[playerId].Item1;
-                        
+
                         Broadcast(room, $"PlayerWin: {winner}\n");
                         try
                         {
-                            DocumentReference winnerDocref=db.Collection("players").Document(winner);
-                            DocumentSnapshot winnerSnapshot= await winnerDocref.GetSnapshotAsync();
+                            DocumentReference winnerDocref = db.Collection("players").Document(winner);
+                            DocumentSnapshot winnerSnapshot = await winnerDocref.GetSnapshotAsync();
                             if (winnerSnapshot.Exists)
                             {
                                 // Cập nhật số trận thắng
@@ -693,7 +733,7 @@ public class Server
                                 Console.WriteLine($"Không tìm thấy người chơi {winner} trong Firestore để cập nhật số trận thắng.");
                             }
                         }
-                        catch(Exception firestoreEX)
+                        catch (Exception firestoreEX)
                         {
                             Console.WriteLine($"[ERROR] Lỗi khi cập nhật điểm cho người chơi {winner}: {firestoreEX.Message}");
                         }
@@ -802,7 +842,46 @@ public class Server
                     await HandleClientDisconnection(acceptedClient, username, authenticatedUserUid);
                     return; // Exit the loop since client is disconnecting
                 }
+                else if (message.StartsWith("GetRanking"))
+                {
+                    Console.WriteLine("[DEBUG] Client requested ranking data.");
+                    try
+                    {
+                        // Lấy dữ liệu bảng xếp hạng từ Firestore
+                        // Truy vấn collection "players", sắp xếp theo "points" giảm dần
+                        Query rankingQuery = db.Collection("players")
+                                   .OrderByDescending("points")
+                                   .Limit(10); // Lấy top 10 người chơi, có thể điều chỉnh
 
+                        QuerySnapshot rankingSnapshot = await rankingQuery.GetSnapshotAsync();
+
+                        List<string> rankingEntries = new List<string>();
+                        foreach (DocumentSnapshot document in rankingSnapshot.Documents)
+                        {
+                            if (document.Exists)
+                            {
+                                string playerName = document.GetValue<string>("username");
+                                long points = 0;
+                                if (document.ContainsField("points"))
+                                {
+                                    points = document.GetValue<long>("points");
+                                }
+                                rankingEntries.Add($"{playerName}|{points}");
+                            }
+                        }
+
+                        string rankingMessage = "Ranking: " + string.Join(",", rankingEntries) + "\n";
+                        byte[] data = Encoding.UTF8.GetBytes(rankingMessage);
+                        acceptedClient.Send(data);
+                        Console.WriteLine($"[DEBUG] Sent ranking data: {rankingMessage.Trim()}");
+                    }
+                    catch (Exception rankingEx)
+                    {
+                        Console.WriteLine($"[ERROR] Error fetching ranking data: {rankingEx.Message}");
+                        acceptedClient.Send(Encoding.UTF8.GetBytes($"Error: Cannot retrieve ranking data.\n"));
+                    }
+
+                }
             }
             catch (Exception ex)
             {
@@ -812,7 +891,7 @@ public class Server
                     Console.WriteLine($"[DEBUG] Thread cancelled, exiting gracefully");
                     break;
                 }
-                
+
                 Console.WriteLine($"[ERROR] Client connection error: {ex.Message}");
                 // Handle unexpected disconnection
                 await HandleClientDisconnection(acceptedClient, username, authenticatedUserUid);
@@ -1255,6 +1334,7 @@ public class Server
         serverThread = new Thread(ServerThread);
         serverThread.Start();
         TestFirestoreConnection();
+        UpdateAllPlayersStatusToOffline();
     }
 
     public void StopServer()
