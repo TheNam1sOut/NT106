@@ -27,6 +27,7 @@ namespace UNO
         private void button1_Click(object sender, EventArgs e)
         {
             this.Hide();
+
             Menu menuForm = new Menu(username,tcpPlayer);
             menuForm.Show();
         }

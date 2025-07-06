@@ -308,15 +308,58 @@ public class Server
 
         while (acceptedClient.Connected && !cancellationToken.IsCancellationRequested)
         {
+            
             try
             {
+                if (rooms != null && rooms.rommbg == 1 && rooms.currentTurnStartTime.HasValue && rooms.ClientId.TryGetValue(acceptedClient, out int currentPlayerIdInRoom))
+                {
+                    if (rooms.currentTurn == currentPlayerIdInRoom) // Chỉ kiểm tra timer cho người chơi đang đến lượt
+                    {
+                        TimeSpan elapsed = DateTime.UtcNow - rooms.currentTurnStartTime.Value;
+                        if (elapsed.TotalSeconds > Room.TURN_TIME_LIMIT_SECONDS)
+                        {
+                            Console.WriteLine($"[DEBUG] Người chơi {username} (ID: {rooms.ClientId[acceptedClient]}) trong phòng {rooms.id} đã hết thời gian. Tự động rút bài.");
+
+                            // Tùy chọn: Gửi thông báo hết thời gian cho client
+                            acceptedClient.Send(Encoding.UTF8.GetBytes("Timeout: Bạn không đánh bài hoặc rút bài kịp thời. Tự động rút một lá.\n"));
+
+                            // Logic tự động rút bài do hết thời gian
+                            if (rooms.Dataqueue.Count == 0) RefillDrawPile(rooms);
+                            string newCard = rooms.Dataqueue.Dequeue();
+                            rooms.playerHands[rooms.ClientId[acceptedClient]].Enqueue(newCard);
+                            acceptedClient.Send(Encoding.UTF8.GetBytes($"DrawCard: {newCard}\n")); // Gửi lá bài đã rút cho người chơi hết thời gian
+
+                            // Cập nhật và thông báo số bài còn lại của người chơi
+                            int remaining = rooms.playerHands[rooms.ClientId[acceptedClient]].Count;
+                            Broadcast(rooms, $"Remaining: {rooms.ClientId[acceptedClient]}:{remaining}\n");
+
+                            rooms.pendingDrawCards = 0; // Đặt lại pendingDrawCards vì đây là một lượt rút bài do hết thời gian
+                            Broadcast(rooms, $"PendingDraw: 0\n"); // Cập nhật pendingDrawCards cho tất cả client
+
+                            // Chuyển lượt sau khi tự động rút bài
+                            int next = nextplayer(rooms.ClientId[acceptedClient], rooms.isReversed);
+                            rooms.currentTurn = next;
+                            Broadcast(rooms, $"Turn: {rooms.currentTurn}\n");
+
+                            // Đặt lại thời gian cho lượt của người chơi tiếp theo
+                            rooms.currentTurnStartTime = DateTime.UtcNow;
+                            Broadcast(rooms, $"TurnTimerStart: {rooms.currentTurn}|{Room.TURN_TIME_LIMIT_SECONDS}\n"); // Thông báo cho client về việc bắt đầu lại timer
+
+                            continue; // Bỏ qua xử lý tin nhắn đến trong vòng lặp này, chuyển sang vòng lặp tiếp theo
+                        }
+                    }
+                }
                 // Check for cancellation before receiving data
                 if (cancellationToken.IsCancellationRequested)
                 {
                     Console.WriteLine($"[DEBUG] Cancellation requested for client thread");
                     break;
                 }
-
+                if (!acceptedClient.Poll(100000, SelectMode.SelectRead))
+                {
+                    // Không có dữ liệu, tiếp tục vòng lặp để kiểm tra timer hoặc chờ
+                    continue;
+                }
                 byteRecv = acceptedClient.Receive(buffer);
                 if (byteRecv == 0)
                 {
@@ -578,6 +621,8 @@ public class Server
                             Broadcast(room, namesMsg);
 
                             SendInitialHand(room);
+                            room.currentTurnStartTime = DateTime.UtcNow; // Bắt đầu timer cho người chơi 1 (currentTurn mặc định là 1)
+                            Broadcast(room, $"TurnTimerStart: {room.currentTurn}|{Room.TURN_TIME_LIMIT_SECONDS}\n"); // Thông báo cho client
                             foreach (var kv in room.ClientId)
                             {
                                 int pid = kv.Value;
@@ -642,6 +687,8 @@ public class Server
                         next = nextplayer(next, room.isReversed);
                     }
                     room.currentTurn = next;
+                    room.currentTurnStartTime = DateTime.UtcNow;
+                    Broadcast(room, $"TurnTimerStart: {room.currentTurn}|{Room.TURN_TIME_LIMIT_SECONDS}\n"); // Thông báo cho client
                     // send new top, turn, pending draw
                     Console.WriteLine($"[DEBUG][PlayCard] - Giá trị hiện tại: {room.currentValue}");
                     Console.WriteLine($"[DEBUG][PlayCard] - Lượt tiếp theo: {room.currentTurn}");
@@ -789,6 +836,8 @@ public class Server
                         room.playerHands[playerId].Enqueue(drawnCard);
 
                         acceptedClient.Send(Encoding.UTF8.GetBytes($"DrawCard: {drawnCard}\n"));
+                        room.currentTurnStartTime = DateTime.UtcNow; // Người chơi được thêm 10 giây để đánh lá bài mới
+                        Broadcast(room, $"TurnTimerStart: {room.currentTurn}|{Room.TURN_TIME_LIMIT_SECONDS}\n"); // Thông báo cho client
                     }
 
 
@@ -1171,6 +1220,8 @@ public class Server
     private class Room
     {
         //thêm constructor tùy chỉnh sau
+        public DateTime? currentTurnStartTime; // Thời điểm bắt đầu lượt chơi hiện tại
+        public const int TURN_TIME_LIMIT_SECONDS = 15; // Giới hạn 10 giây
         public int currentTurn;
         public int pendingDrawCards = 0; //stack card cần rút
         public char pendingWildColor = 'W'; // Màu mặc định cho Wild
