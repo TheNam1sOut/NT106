@@ -538,6 +538,14 @@ public class Server
                             Broadcast(room, namesMsg);
 
                             SendInitialHand(room);
+                            foreach (var kv in room.ClientId)
+                            {
+                                int pid = kv.Value;
+                                int count = room.playerHands[pid].Count;
+                                string msg = $"Remaining: {pid}:{count}\n";
+                                Broadcast(room, msg);
+                            }
+
                         }
                     }
                     Console.WriteLine("ready");
@@ -632,6 +640,9 @@ public class Server
 
                     int remaining = room.playerHands[playerId].Count;
                     Broadcast(room, $"Remaining: {playerId}:{remaining}\n");
+                    string msg = $"Remaining: {playerId}:{remaining}\n";
+                    foreach (var sock in room.ClientId.Keys)
+                        sock.Send(Encoding.UTF8.GetBytes(msg));
 
                     // Nếu người chơi còn 1 lá và chưa gọi UNO trước đó
                     if (remaining == 1 && !room.UnoCalled[playerId])

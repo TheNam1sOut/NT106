@@ -657,6 +657,14 @@ public class Server
                             Broadcast(room, namesMsg);
 
                             SendInitialHand(room);
+                            foreach (var kv in room.ClientId)
+                            {
+                                Socket sock = kv.Key;     // client socket
+                                int pid = kv.Value;   // playerId
+                                int count = room.playerHands[pid].Count;
+                                string msg = $"Remaining: {pid}:{count}\n";
+                                sock.Send(Encoding.UTF8.GetBytes(msg));
+                            }
                         }
                     }
                     Console.WriteLine("ready");
@@ -751,6 +759,9 @@ public class Server
 
                     int remaining = room.playerHands[playerId].Count;
                     Broadcast(room, $"Remaining: {playerId}:{remaining}\n");
+                    string msg = $"Remaining: {playerId}:{remaining}\n";
+                    foreach (var sock in room.ClientId.Keys)
+                        sock.Send(Encoding.UTF8.GetBytes(msg));
 
                     // Nếu người chơi còn 1 lá và chưa gọi UNO trước đó
                     if (remaining == 1 && !room.UnoCalled[playerId])
@@ -1656,6 +1667,15 @@ namespace UNO
             sendBtn.Visible = false;
             chatBox.Visible = false;
             chatInput.Visible = false;
+            NameMe.Visible = false;
+            Name1.Visible = false;
+            Name2.Visible = false;
+            Name3.Visible = false;
+            Number1.Visible = false;
+            Number2.Visible = false;
+            Number3.Visible = false;
+            NumberMe.Visible = false;
+
 
             this.playerName = playerName;
             this.TcpClient = playerSocket;
@@ -2238,12 +2258,14 @@ namespace UNO
 
                         var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { TimeMe, TimeEnemy };
+                        var labelControls = new[] { TimeMe, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe,Number1,Number2,Number3 };
 
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
                         {
                             MiddlePictureBox,
+                            pictureBox1,
+                            pictureBox2,
                             AvatarPlayer,
                             Enemy,
                             setting,
@@ -2523,6 +2545,39 @@ namespace UNO
                             }
                         }
                     }
+                    else if (msg.StartsWith("Remaining: "))
+                    {
+                        // Format của msg là "Remaining: playerId:count"
+                        var token = msg.Substring("Remaining: ".Length).Trim();
+                        var parts = token.Split(':');
+                        if (parts.Length == 2
+                            && int.TryParse(parts[0], out int pid)
+                            && int.TryParse(parts[1], out int count))
+                        {
+                            this.Invoke((Action)(() =>
+                            {
+                                string labelName;
+                                if (pid == myPlayerId)
+                                {
+                                    // Chính mình
+                                    labelName = "NumberMe";
+                                }
+                                else
+                                {
+                                    // Xác định vị trí của đối thủ tương ứng với Name1/2/3
+                                    int offset = (pid - myPlayerId + 4) % 4; // Kết quả là 1,2 hoặc 3
+                                    labelName = $"Number{offset}";
+                                }
+                                var lbl = this.Controls[labelName] as Label;
+                                if (lbl != null)
+                                {
+                                    lbl.Text =$"Số lá:{count.ToString()}"; // Hiển thị số lá
+                                    lbl.Visible = true;          // Cho hiện Label nếu đang ẩn
+                                }
+                            }));
+                        }
+                    }
+
 
 
 
@@ -2662,6 +2717,16 @@ namespace UNO
         {
 
         }
+
+        private void pictureBox2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void pictureBox1_Click_1(object sender, EventArgs e)
+        {
+
+        }
     }
 }
 ```
@@ -2739,10 +2804,14 @@ namespace UNO
             backBtn = new Button();
             pictureBox1 = new PictureBox();
             pictureBox2 = new PictureBox();
-            NameMe = new Label();
             Name1 = new Label();
             Name2 = new Label();
             Name3 = new Label();
+            NameMe = new Label();
+            NumberMe = new Label();
+            Number3 = new Label();
+            Number2 = new Label();
+            Number1 = new Label();
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).BeginInit();
@@ -3191,13 +3260,14 @@ namespace UNO
             pictureBox1.BackColor = Color.Transparent;
             pictureBox1.Cursor = Cursors.Hand;
             pictureBox1.Image = Properties.Resources.avatar_removebg_preview;
-            pictureBox1.Location = new Point(193, 143);
+            pictureBox1.Location = new Point(200, 143);
             pictureBox1.Name = "pictureBox1";
             pictureBox1.Size = new Size(80, 80);
             pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
             pictureBox1.TabIndex = 37;
             pictureBox1.TabStop = false;
             pictureBox1.Visible = false;
+            pictureBox1.Click += pictureBox1_Click_1;
             // 
             // pictureBox2
             // 
@@ -3211,43 +3281,104 @@ namespace UNO
             pictureBox2.TabIndex = 38;
             pictureBox2.TabStop = false;
             pictureBox2.Visible = false;
-            // 
-            // NameMe
-            // 
-            NameMe.AutoSize = true;
-            NameMe.Location = new Point(88, 399);
-            NameMe.Name = "NameMe";
-            NameMe.Size = new Size(50, 20);
-            NameMe.TabIndex = 39;
-            NameMe.Text = "label1";
+            pictureBox2.Click += pictureBox2_Click;
             // 
             // Name1
             // 
             Name1.AutoSize = true;
-            Name1.Location = new Point(776, 120);
+            Name1.BackColor = Color.Transparent;
+            Name1.ForeColor = Color.White;
+            Name1.Location = new Point(754, 120);
             Name1.Name = "Name1";
-            Name1.Size = new Size(50, 20);
+            Name1.Size = new Size(107, 20);
             Name1.TabIndex = 40;
-            Name1.Text = "label1";
+            Name1.Text = "zzzzSatthuzzzz";
+            Name1.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // Name2
             // 
             Name2.AutoSize = true;
-            Name2.Location = new Point(509, 0);
+            Name2.BackColor = Color.Transparent;
+            Name2.ForeColor = SystemColors.ButtonHighlight;
+            Name2.Location = new Point(479, 0);
             Name2.Name = "Name2";
-            Name2.Size = new Size(50, 20);
+            Name2.Size = new Size(107, 20);
             Name2.TabIndex = 41;
-            Name2.Text = "label1";
+            Name2.Text = "zzzzSatthuzzzz";
+            Name2.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // Name3
             // 
             Name3.AutoSize = true;
-            Name3.Location = new Point(210, 120);
+            Name3.BackColor = Color.Transparent;
+            Name3.ForeColor = Color.White;
+            Name3.Location = new Point(193, 120);
             Name3.Name = "Name3";
-            Name3.Size = new Size(50, 20);
+            Name3.Size = new Size(107, 20);
             Name3.TabIndex = 42;
-            Name3.Text = "label1";
+            Name3.Text = "zzzzSatthuzzzz";
+            Name3.TextAlign = ContentAlignment.MiddleCenter;
             Name3.Click += Name3_Click;
+            // 
+            // NameMe
+            // 
+            NameMe.AutoSize = true;
+            NameMe.BackColor = Color.Transparent;
+            NameMe.ForeColor = Color.White;
+            NameMe.Location = new Point(62, 399);
+            NameMe.Name = "NameMe";
+            NameMe.Size = new Size(105, 20);
+            NameMe.TabIndex = 39;
+            NameMe.Text = "zzzsatthuzzzzz";
+            NameMe.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // NumberMe
+            // 
+            NumberMe.AutoSize = true;
+            NumberMe.BackColor = Color.Transparent;
+            NumberMe.ForeColor = Color.White;
+            NumberMe.Location = new Point(157, 350);
+            NumberMe.Name = "NumberMe";
+            NumberMe.Size = new Size(105, 20);
+            NumberMe.TabIndex = 43;
+            NumberMe.Text = "zzzsatthuzzzzz";
+            NumberMe.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // Number3
+            // 
+            Number3.AutoSize = true;
+            Number3.BackColor = Color.Transparent;
+            Number3.ForeColor = Color.White;
+            Number3.Location = new Point(286, 153);
+            Number3.Name = "Number3";
+            Number3.Size = new Size(105, 20);
+            Number3.TabIndex = 44;
+            Number3.Text = "zzzsatthuzzzzz";
+            Number3.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // Number2
+            // 
+            Number2.AutoSize = true;
+            Number2.BackColor = Color.Transparent;
+            Number2.ForeColor = Color.White;
+            Number2.Location = new Point(479, 101);
+            Number2.Name = "Number2";
+            Number2.Size = new Size(105, 20);
+            Number2.TabIndex = 45;
+            Number2.Text = "zzzsatthuzzzzz";
+            Number2.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // Number1
+            // 
+            Number1.AutoSize = true;
+            Number1.BackColor = Color.Transparent;
+            Number1.ForeColor = Color.White;
+            Number1.Location = new Point(661, 153);
+            Number1.Name = "Number1";
+            Number1.Size = new Size(105, 20);
+            Number1.TabIndex = 46;
+            Number1.Text = "zzzsatthuzzzzz";
+            Number1.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // Arena
             // 
@@ -3256,6 +3387,10 @@ namespace UNO
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(875, 511);
+            Controls.Add(Number1);
+            Controls.Add(Number2);
+            Controls.Add(Number3);
+            Controls.Add(NumberMe);
             Controls.Add(Name3);
             Controls.Add(Name2);
             Controls.Add(Name1);
@@ -3366,10 +3501,14 @@ namespace UNO
         private Button backBtn;
         private PictureBox pictureBox1;
         private PictureBox pictureBox2;
-        private Label NameMe;
         private Label Name1;
         private Label Name2;
         private Label Name3;
+        private Label NameMe;
+        private Label NumberMe;
+        private Label Number3;
+        private Label Number2;
+        private Label Number1;
     }
 }
 ```

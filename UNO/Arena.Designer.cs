@@ -69,10 +69,14 @@
             backBtn = new Button();
             pictureBox1 = new PictureBox();
             pictureBox2 = new PictureBox();
-            NameMe = new Label();
             Name1 = new Label();
             Name2 = new Label();
             Name3 = new Label();
+            NameMe = new Label();
+            NumberMe = new Label();
+            Number3 = new Label();
+            Number2 = new Label();
+            Number1 = new Label();
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)AvatarPlayer).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Enemy).BeginInit();
@@ -544,18 +548,6 @@
             pictureBox2.Visible = false;
             pictureBox2.Click += pictureBox2_Click;
             // 
-            // NameMe
-            // 
-            NameMe.AutoSize = true;
-            NameMe.BackColor = Color.Transparent;
-            NameMe.ForeColor = Color.White;
-            NameMe.Location = new Point(62, 399);
-            NameMe.Name = "NameMe";
-            NameMe.Size = new Size(105, 20);
-            NameMe.TabIndex = 39;
-            NameMe.Text = "zzzsatthuzzzzz";
-            NameMe.TextAlign = ContentAlignment.MiddleCenter;
-            // 
             // Name1
             // 
             Name1.AutoSize = true;
@@ -593,6 +585,66 @@
             Name3.TextAlign = ContentAlignment.MiddleCenter;
             Name3.Click += Name3_Click;
             // 
+            // NameMe
+            // 
+            NameMe.AutoSize = true;
+            NameMe.BackColor = Color.Transparent;
+            NameMe.ForeColor = Color.White;
+            NameMe.Location = new Point(62, 399);
+            NameMe.Name = "NameMe";
+            NameMe.Size = new Size(105, 20);
+            NameMe.TabIndex = 39;
+            NameMe.Text = "zzzsatthuzzzzz";
+            NameMe.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // NumberMe
+            // 
+            NumberMe.AutoSize = true;
+            NumberMe.BackColor = Color.Transparent;
+            NumberMe.ForeColor = Color.White;
+            NumberMe.Location = new Point(157, 350);
+            NumberMe.Name = "NumberMe";
+            NumberMe.Size = new Size(105, 20);
+            NumberMe.TabIndex = 43;
+            NumberMe.Text = "zzzsatthuzzzzz";
+            NumberMe.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // Number3
+            // 
+            Number3.AutoSize = true;
+            Number3.BackColor = Color.Transparent;
+            Number3.ForeColor = Color.White;
+            Number3.Location = new Point(286, 153);
+            Number3.Name = "Number3";
+            Number3.Size = new Size(105, 20);
+            Number3.TabIndex = 44;
+            Number3.Text = "zzzsatthuzzzzz";
+            Number3.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // Number2
+            // 
+            Number2.AutoSize = true;
+            Number2.BackColor = Color.Transparent;
+            Number2.ForeColor = Color.White;
+            Number2.Location = new Point(479, 101);
+            Number2.Name = "Number2";
+            Number2.Size = new Size(105, 20);
+            Number2.TabIndex = 45;
+            Number2.Text = "zzzsatthuzzzzz";
+            Number2.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // Number1
+            // 
+            Number1.AutoSize = true;
+            Number1.BackColor = Color.Transparent;
+            Number1.ForeColor = Color.White;
+            Number1.Location = new Point(661, 153);
+            Number1.Name = "Number1";
+            Number1.Size = new Size(105, 20);
+            Number1.TabIndex = 46;
+            Number1.Text = "zzzsatthuzzzzz";
+            Number1.TextAlign = ContentAlignment.MiddleCenter;
+            // 
             // Arena
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -600,6 +652,10 @@
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(875, 511);
+            Controls.Add(Number1);
+            Controls.Add(Number2);
+            Controls.Add(Number3);
+            Controls.Add(NumberMe);
             Controls.Add(Name3);
             Controls.Add(Name2);
             Controls.Add(Name1);
@@ -710,9 +766,13 @@
         private Button backBtn;
         private PictureBox pictureBox1;
         private PictureBox pictureBox2;
-        private Label NameMe;
         private Label Name1;
         private Label Name2;
         private Label Name3;
+        private Label NameMe;
+        private Label NumberMe;
+        private Label Number3;
+        private Label Number2;
+        private Label Number1;
     }
 }

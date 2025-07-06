@@ -251,6 +251,10 @@ namespace UNO
             Name1.Visible = false;
             Name2.Visible = false;
             Name3.Visible = false;
+            Number1.Visible = false;
+            Number2.Visible = false;
+            Number3.Visible = false;
+            NumberMe.Visible = false;
 
 
             this.playerName = playerName;
@@ -834,7 +838,7 @@ namespace UNO
 
                         var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { TimeMe, TimeEnemy, NameMe, Name1, Name2, Name3 };
+                        var labelControls = new[] { TimeMe, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe,Number1,Number2,Number3 };
 
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
@@ -1121,6 +1125,39 @@ namespace UNO
                             }
                         }
                     }
+                    else if (msg.StartsWith("Remaining: "))
+                    {
+                        // Format của msg là "Remaining: playerId:count"
+                        var token = msg.Substring("Remaining: ".Length).Trim();
+                        var parts = token.Split(':');
+                        if (parts.Length == 2
+                            && int.TryParse(parts[0], out int pid)
+                            && int.TryParse(parts[1], out int count))
+                        {
+                            this.Invoke((Action)(() =>
+                            {
+                                string labelName;
+                                if (pid == myPlayerId)
+                                {
+                                    // Chính mình
+                                    labelName = "NumberMe";
+                                }
+                                else
+                                {
+                                    // Xác định vị trí của đối thủ tương ứng với Name1/2/3
+                                    int offset = (pid - myPlayerId + 4) % 4; // Kết quả là 1,2 hoặc 3
+                                    labelName = $"Number{offset}";
+                                }
+                                var lbl = this.Controls[labelName] as Label;
+                                if (lbl != null)
+                                {
+                                    lbl.Text =$"Số lá: {count.ToString()}"; // Hiển thị số lá
+                                    lbl.Visible = true;          // Cho hiện Label nếu đang ẩn
+                                }
+                            }));
+                        }
+                    }
+
 
 
 
