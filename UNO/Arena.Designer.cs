@@ -70,16 +70,13 @@
             Number3 = new Label();
             Number2 = new Label();
             Number1 = new Label();
-<<<<<<< HEAD
+            lblTimer = new Label();
+            TimeEnemy = new Label();
             Me = new Panel();
             NumberMe = new Label();
             Player1 = new Panel();
             Player2 = new Panel();
             Player3 = new Panel();
-=======
-            lblTimer = new Label();
-            TimeEnemy = new Label();
->>>>>>> timer chua xu phat
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)setting).BeginInit();
             ((System.ComponentModel.ISupportInitialize)imojiButon).BeginInit();
@@ -115,39 +112,6 @@
             MiddlePictureBox.Visible = false;
             MiddlePictureBox.Click += drawCard_Click;
             // 
-<<<<<<< HEAD
-=======
-            // AvatarPlayer
-            // 
-            AvatarPlayer.BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
-            AvatarPlayer.Cursor = Cursors.Hand;
-            AvatarPlayer.Image = Properties.Resources.avatar_removebg_preview;
-            AvatarPlayer.Location = new Point(62, 314);
-            AvatarPlayer.Margin = new Padding(3, 2, 3, 2);
-            AvatarPlayer.Name = "AvatarPlayer";
-            AvatarPlayer.Size = new Size(70, 60);
-            AvatarPlayer.SizeMode = PictureBoxSizeMode.StretchImage;
-            AvatarPlayer.TabIndex = 1;
-            AvatarPlayer.TabStop = false;
-            AvatarPlayer.Visible = false;
-            AvatarPlayer.Click += AvatarPlayer_Click;
-            // 
-            // Enemy
-            // 
-            Enemy.BackColor = Color.Transparent;
-            Enemy.Cursor = Cursors.Hand;
-            Enemy.Image = Properties.Resources.avatar_removebg_preview;
-            Enemy.Location = new Point(430, 14);
-            Enemy.Margin = new Padding(3, 2, 3, 2);
-            Enemy.Name = "Enemy";
-            Enemy.Size = new Size(70, 60);
-            Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
-            Enemy.TabIndex = 2;
-            Enemy.TabStop = false;
-            Enemy.Visible = false;
-            Enemy.Click += Enemy_Click;
-            // 
->>>>>>> timer chua xu phat
             // setting
             // 
             setting.BackColor = Color.Transparent;
@@ -528,49 +492,13 @@
             backBtn.Visible = false;
             backBtn.Click += backBtn_Click;
             // 
-<<<<<<< HEAD
-=======
-            // pictureBox1
-            // 
-            pictureBox1.BackColor = Color.Transparent;
-            pictureBox1.Cursor = Cursors.Hand;
-            pictureBox1.Image = Properties.Resources.avatar_removebg_preview;
-            pictureBox1.Location = new Point(175, 107);
-            pictureBox1.Margin = new Padding(3, 2, 3, 2);
-            pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(70, 60);
-            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
-            pictureBox1.TabIndex = 37;
-            pictureBox1.TabStop = false;
-            pictureBox1.Visible = false;
-            pictureBox1.Click += pictureBox1_Click_1;
-            // 
-            // pictureBox2
-            // 
-            pictureBox2.BackColor = Color.Transparent;
-            pictureBox2.Cursor = Cursors.Hand;
-            pictureBox2.Image = Properties.Resources.avatar_removebg_preview;
-            pictureBox2.Location = new Point(668, 107);
-            pictureBox2.Margin = new Padding(3, 2, 3, 2);
-            pictureBox2.Name = "pictureBox2";
-            pictureBox2.Size = new Size(70, 60);
-            pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
-            pictureBox2.TabIndex = 38;
-            pictureBox2.TabStop = false;
-            pictureBox2.Visible = false;
-            pictureBox2.Click += pictureBox2_Click;
-            // 
->>>>>>> timer chua xu phat
             // Name1
             // 
             Name1.BackColor = Color.Transparent;
-<<<<<<< HEAD
-            Name1.ForeColor = Color.Black;
-            Name1.Location = new Point(0, 0);
-=======
             Name1.ForeColor = Color.White;
             Name1.Location = new Point(660, 90);
->>>>>>> timer chua xu phat
+            Name1.ForeColor = Color.Black;
+            Name1.Location = new Point(0, 0);
             Name1.Name = "Name1";
             Name1.Size = new Size(81, 15);
             Name1.TabIndex = 40;
@@ -580,13 +508,10 @@
             // Name2
             // 
             Name2.BackColor = Color.Transparent;
-<<<<<<< HEAD
-            Name2.ForeColor = Color.Black;
-            Name2.Location = new Point(1, 0);
-=======
             Name2.ForeColor = SystemColors.ButtonHighlight;
             Name2.Location = new Point(419, 0);
->>>>>>> timer chua xu phat
+            Name2.ForeColor = Color.Black;
+            Name2.Location = new Point(1, 0);
             Name2.Name = "Name2";
             Name2.Size = new Size(81, 15);
             Name2.TabIndex = 41;
@@ -597,13 +522,10 @@
             // Name3
             // 
             Name3.BackColor = Color.Transparent;
-<<<<<<< HEAD
-            Name3.ForeColor = Color.Black;
-            Name3.Location = new Point(1, 0);
-=======
             Name3.ForeColor = Color.White;
             Name3.Location = new Point(169, 90);
->>>>>>> timer chua xu phat
+            Name3.ForeColor = Color.Black;
+            Name3.Location = new Point(1, 0);
             Name3.Name = "Name3";
             Name3.Size = new Size(81, 15);
             Name3.TabIndex = 42;
@@ -615,41 +537,15 @@
             // 
             NameMe.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             NameMe.BackColor = Color.Transparent;
-<<<<<<< HEAD
-            NameMe.ForeColor = Color.Black;
-            NameMe.Location = new Point(3, 0);
-=======
             NameMe.ForeColor = Color.White;
             NameMe.Location = new Point(54, 299);
->>>>>>> timer chua xu phat
+            NameMe.ForeColor = Color.Black;
+            NameMe.Location = new Point(3, 0);
             NameMe.Name = "NameMe";
             NameMe.Size = new Size(80, 15);
             NameMe.TabIndex = 39;
             NameMe.Text = "zzzsatthuzzzzz";
             NameMe.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-<<<<<<< HEAD
-            // Number3
-            // 
-            Number3.AutoSize = true;
-            Number3.BackColor = Color.Cyan;
-            Number3.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            Number3.ForeColor = Color.Red;
-            Number3.Location = new Point(23, 24);
-            Number3.Name = "Number3";
-            Number3.Size = new Size(68, 20);
-=======
-            // NumberMe
-            // 
-            NumberMe.AutoSize = true;
-            NumberMe.BackColor = Color.Transparent;
-            NumberMe.ForeColor = Color.White;
-            NumberMe.Location = new Point(137, 262);
-            NumberMe.Name = "NumberMe";
-            NumberMe.Size = new Size(80, 15);
-            NumberMe.TabIndex = 43;
-            NumberMe.Text = "zzzsatthuzzzzz";
-            NumberMe.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // Number3
             // 
@@ -657,9 +553,13 @@
             Number3.BackColor = Color.Transparent;
             Number3.ForeColor = Color.White;
             Number3.Location = new Point(250, 115);
+            Number3.BackColor = Color.Cyan;
+            Number3.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            Number3.ForeColor = Color.Red;
+            Number3.Location = new Point(23, 24);
             Number3.Name = "Number3";
             Number3.Size = new Size(80, 15);
->>>>>>> timer chua xu phat
+            Number3.Size = new Size(68, 20);
             Number3.TabIndex = 44;
             Number3.Text = "Số lá: 15";
             Number3.TextAlign = ContentAlignment.MiddleCenter;
@@ -667,20 +567,16 @@
             // Number2
             // 
             Number2.AutoSize = true;
-<<<<<<< HEAD
+            Number2.BackColor = Color.Transparent;
+            Number2.ForeColor = Color.White;
+            Number2.Location = new Point(419, 76);
             Number2.BackColor = Color.Cyan;
             Number2.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             Number2.ForeColor = Color.Red;
             Number2.Location = new Point(22, 24);
             Number2.Name = "Number2";
-            Number2.Size = new Size(68, 20);
-=======
-            Number2.BackColor = Color.Transparent;
-            Number2.ForeColor = Color.White;
-            Number2.Location = new Point(419, 76);
-            Number2.Name = "Number2";
             Number2.Size = new Size(80, 15);
->>>>>>> timer chua xu phat
+            Number2.Size = new Size(68, 20);
             Number2.TabIndex = 45;
             Number2.Text = "Số lá: 14";
             Number2.TextAlign = ContentAlignment.MiddleCenter;
@@ -689,20 +585,16 @@
             // Number1
             // 
             Number1.AutoSize = true;
-<<<<<<< HEAD
+            Number1.BackColor = Color.Transparent;
+            Number1.ForeColor = Color.White;
+            Number1.Location = new Point(578, 115);
             Number1.BackColor = Color.Cyan;
             Number1.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             Number1.ForeColor = Color.Red;
             Number1.Location = new Point(20, 24);
             Number1.Name = "Number1";
-            Number1.Size = new Size(68, 20);
-=======
-            Number1.BackColor = Color.Transparent;
-            Number1.ForeColor = Color.White;
-            Number1.Location = new Point(578, 115);
-            Number1.Name = "Number1";
             Number1.Size = new Size(80, 15);
->>>>>>> timer chua xu phat
+            Number1.Size = new Size(68, 20);
             Number1.TabIndex = 46;
             Number1.Text = "Số lá: 13";
             Number1.TextAlign = ContentAlignment.MiddleCenter;
@@ -791,13 +683,6 @@
             AutoScaleMode = AutoScaleMode.Font;
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
-<<<<<<< HEAD
-            ClientSize = new Size(875, 511);
-            Controls.Add(Player3);
-            Controls.Add(Player2);
-            Controls.Add(Player1);
-            Controls.Add(Me);
-=======
             ClientSize = new Size(766, 383);
             Controls.Add(Number1);
             Controls.Add(Number2);
@@ -809,7 +694,11 @@
             Controls.Add(NameMe);
             Controls.Add(pictureBox2);
             Controls.Add(pictureBox1);
->>>>>>> timer chua xu phat
+            ClientSize = new Size(875, 511);
+            Controls.Add(Player3);
+            Controls.Add(Player2);
+            Controls.Add(Player1);
+            Controls.Add(Me);
             Controls.Add(backBtn);
             Controls.Add(scoreLabel);
             Controls.Add(resultLabel);
@@ -918,15 +807,12 @@
         private Label Number3;
         private Label Number2;
         private Label Number1;
-<<<<<<< HEAD
+        private Label lblTimer;
+        private Label TimeEnemy;
         private Panel Me;
         private Label NumberMe;
         private Panel Player1;
         private Panel Player2;
         private Panel Player3;
-=======
-        private Label lblTimer;
-        private Label TimeEnemy;
->>>>>>> timer chua xu phat
     }
 }
