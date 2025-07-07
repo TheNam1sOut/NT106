@@ -45,7 +45,9 @@ namespace UNO
         private int pendingDraw = 0;
         private bool unoCalled = false;
         private int targetId = -1;
-
+        private System.Windows.Forms.Timer uiTimer; // Timer để cập nhật UI
+        private int remainingTimeSeconds; // Thời gian còn lại tính bằng giây
+        private int currentTurnPlayerId; // ID của người chơi hiện tại (từ server)
         /* Một map lưu tất cả hình ảnh lá bài và key để truy xuất các phần tử đó
          * Quy ước về tên lá bài:
          * R, G, B, Y: Màu lá bài, lần lượt là đỏ, xanh lá cây, xanh biển, vàng
@@ -81,7 +83,29 @@ namespace UNO
             deck = imageCards.Keys.ToList();
             ShuffleDeck();
         }
+        private void UiTimer_Tick(object sender, EventArgs e)
+        {
+            if (remainingTimeSeconds > 0)
+            {
+                remainingTimeSeconds--;
+                lblTimer.Text = $"{remainingTimeSeconds}s";
 
+                if (remainingTimeSeconds <= 3)
+                {
+                    lblTimer.ForeColor = Color.Red;
+                }
+                else
+                {
+                    lblTimer.ForeColor = SystemColors.ControlText;
+                }
+            }
+            else
+            {
+                uiTimer.Stop();
+                lblTimer.Text = "Hết giờ!";
+                lblTimer.ForeColor = Color.Red;
+            }
+        }
         private void InitializeMiddleCard()
         {
             DisplayMiddleCard(); // gọi ngay sau LoadCards(), trước DisplayFirstSixCards()
@@ -259,6 +283,10 @@ namespace UNO
 
             this.playerName = playerName;
             this.TcpClient = playerSocket;
+            this.stream = TcpClient.GetStream();
+            uiTimer = new System.Windows.Forms.Timer();
+            uiTimer.Interval = 1000; // Cập nhật mỗi 1 giây (1000 miligiây)
+            uiTimer.Tick += UiTimer_Tick; // Gán sự kiện Tick cho phương thức xử lý
             //định nghĩa các hàm khi vào trận
             LoadCards();
 
@@ -300,12 +328,12 @@ namespace UNO
             imojiButon.Cursor = Cursors.Hand;
             imojiButon.Click += pictureBox1_Click;
             this.DoubleBuffered = true;
-            //AvatarPlayer.Image = Properties.Resources.avatar_removebg_preview;
-            //AvatarPlayer.BackColor = Color.Transparent;
-            //AvatarPlayer.SizeMode = PictureBoxSizeMode.StretchImage;
-            //Enemy.Image = Properties.Resources.avatar_removebg_preview;
-            //Enemy.BackColor = Color.Transparent;
-            //Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
+            AvatarPlayer.Image = Properties.Resources.avatar_removebg_preview;
+            AvatarPlayer.BackColor = Color.Transparent;
+            AvatarPlayer.SizeMode = PictureBoxSizeMode.StretchImage;
+            Enemy.Image = Properties.Resources.avatar_removebg_preview;
+            Enemy.BackColor = Color.Transparent;
+            Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
             setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
             setting.BackColor = Color.Transparent;
             setting.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -718,7 +746,7 @@ namespace UNO
                 aTimer.Dispose();
             }
 
-            TimeMe.Text = counter.ToString();
+            lblTimer.Text = counter.ToString();
         }
         private TaskCompletionSource<bool> turnTcs;
         private async void button1_Click(object sender, EventArgs e)
@@ -838,16 +866,16 @@ namespace UNO
 
                         var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { TimeMe, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3 };
+                        var labelControls = new[] { lblTimer, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3 };
 
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
                         {
                             MiddlePictureBox,
-                            //pictureBox1,
-                            //pictureBox2,
-                            //AvatarPlayer,
-                            //Enemy,
+                            pictureBox1,
+                            pictureBox2,
+                            AvatarPlayer,
+                            Enemy,
                             setting,
                             imojiButon,
                             ClockIcon,
@@ -957,7 +985,6 @@ namespace UNO
                     else if (msg.StartsWith("Turn: "))
                     {
                         int id = int.Parse(msg.Substring(6));
-                        UpdatePlayerPanelColor(id);
                         isPlayerTurn = (id == myPlayerId);
                         DrawButton.Enabled = isPlayerTurn && pendingDraw == 0;
 
@@ -984,12 +1011,6 @@ namespace UNO
                         this.Invoke((Action)(() =>
                         {
                             UpdateSixCards();
-
-                        int count = playerHand.Count;
-                            var mePanel = this.Controls["Me"] as Panel;
-                            var lbl = mePanel?.Controls["NumberMe"] as Label;
-                                   if (lbl != null)
-                                lbl.Text = $"Số lá: {count}";
                             // highlight nếu cần
                             if (IsValidMove(card))
                             {
@@ -1021,14 +1042,14 @@ namespace UNO
                     else if (msg.StartsWith("PlayerWin: "))
                     {
                         // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { TimeMe, TimeEnemy };
+                        var labelControls = new[] { lblTimer, TimeEnemy };
 
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
                         {
                             MiddlePictureBox,
-                            //AvatarPlayer,
-                            //Enemy,
+                            AvatarPlayer,
+                            Enemy,
                             setting,
                             imojiButon,
                             ClockIcon,
@@ -1127,10 +1148,7 @@ namespace UNO
                             for (int i = 1; i <= 3; i++)
                             {
                                 int idx = (myPlayerId - 1 + i) % 4;
-                                // Lấy Panel chứa label
-                                var panel = this.Controls[$"Player{i}"] as Panel;
-                                var lbl = panel?.Controls[$"Name{i}"] as Label;
-
+                                var lbl = this.Controls[$"Name{i}"] as Label;
                                 lbl?.Invoke((Action)(() => lbl.Text = parts[idx]));
                             }
                         }
@@ -1158,20 +1176,45 @@ namespace UNO
                                     int offset = (pid - myPlayerId + 4) % 4; // Kết quả là 1,2 hoặc 3
                                     labelName = $"Number{offset}";
                                 }
-                                 if (pid == myPlayerId)
-                                     {
-                                    var mePanel = this.Controls["Me"] as Panel;
-                                    mePanel?.Controls["NumberMe"].Invoke((Action)(() =>
-                                    (mePanel.Controls["NumberMe"] as Label).Text = $"Số lá: {count}"));
-                                     }
-                                 else
-                                     {
-                                    int offset = (pid - myPlayerId + 4) % 4;
-                                    var panel = this.Controls[$"Player{offset}"] as Panel;
-                                    panel?.Controls[$"Number{offset}"].Invoke((Action)(() =>
-                                    (panel.Controls[$"Number{offset}"] as Label).Text = $"Số lá: {count}"));
-                                     }
+                                var lbl = this.Controls[labelName] as Label;
+                                if (lbl != null)
+                                {
+                                    lbl.Text = $"Số lá: {count.ToString()}"; // Hiển thị số lá
+                                    lbl.Visible = true;          // Cho hiện Label nếu đang ẩn
+                                }
                             }));
+                        }
+                    }
+                    else if (msg.StartsWith("TurnTimerStart:"))
+                    {
+                        string[] parts = msg.Substring("TurnTimerStart:".Length).Trim().Split('|');
+                        if (parts.Length == 2 && int.TryParse(parts[0], out int playerTurnId) && int.TryParse(parts[1], out int timeLimit))
+                        {
+                            currentTurnPlayerId = playerTurnId;
+                            remainingTimeSeconds = timeLimit; // Đặt lại thời gian còn lại
+
+                            // Cập nhật highlight người chơi đang đến lượt
+                            
+
+                            uiTimer.Stop(); // Dừng timer cũ để đặt lại
+
+                            // Cập nhật Label ngay lập tức với thời gian đầy đủ
+                            lblTimer.Text = $"{remainingTimeSeconds}s";
+                            lblTimer.ForeColor = SystemColors.ControlText; // Đặt lại màu chữ về mặc định
+
+                            if (playerTurnId == myPlayerId) // Nếu là lượt của chính client này
+                            {
+                                uiTimer.Start(); // Bắt đầu đếm ngược
+                                                 // Tùy chọn: Kích hoạt các nút hành động của tôi
+                                                 // btnPlayCard.Enabled = true;
+                                                 // btnDrawCard.Enabled = true;
+                            }
+                            else // Nếu không phải lượt của tôi
+                            {
+                                // Tùy chọn: Vô hiệu hóa các nút hành động của tôi
+                                // btnPlayCard.Enabled = false;
+                                // btnDrawCard.Enabled = false;
+                            }
                         }
                     }
 
@@ -1212,41 +1255,6 @@ namespace UNO
                 this.Invoke((Action)(() =>
                     MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 ));
-            }
-        }
-        private void UpdatePlayerPanelColor(int currentTurn)
-        {
-            // Đặt tất cả panel về màu mặc định
-            Me.BackColor = Color.White;
-            Player1.BackColor = Color.White;
-            Player2.BackColor = Color.White;
-            Player3.BackColor = Color.White;
-
-            // Tính toán ánh xạ từ playerId đến panel dựa trên myPlayerId
-            // Tạo mảng ánh xạ ID của người chơi theo thứ tự tương đối
-            int[] playerOrder = new int[4];
-            for (int i = 0; i < 4; i++)
-            {
-                // Tính ID của người chơi tại vị trí thứ i (bắt đầu từ myPlayerId)
-                playerOrder[i] = (myPlayerId + i - 1) % 4 + 1; // Tuần hoàn từ 1 đến 4
-            }
-
-            // Xác định panel tương ứng với currentTurn
-            if (currentTurn == playerOrder[0]) // NameMe
-            {
-                Me.BackColor = Color.Yellow;
-            }
-            else if (currentTurn == playerOrder[1]) // Name1
-            {
-                Player1.BackColor = Color.Yellow;
-            }
-            else if (currentTurn == playerOrder[2]) // Name2
-            {
-                Player2.BackColor = Color.Yellow;
-            }
-            else if (currentTurn == playerOrder[3]) // Name3
-            {
-                Player3.BackColor = Color.Yellow;
             }
         }
         private async void ReadyBtn_Click(object sender, EventArgs e)
@@ -1360,27 +1368,7 @@ namespace UNO
 
         }
 
-        private void panel1_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
-
-        private void NumberMe_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Number1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Name2_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Number2_Click(object sender, EventArgs e)
+        private void TimeEnemy_Click(object sender, EventArgs e)
         {
 
         }
