@@ -692,8 +692,8 @@
             Controls.Add(Name2);
             Controls.Add(Name1);
             Controls.Add(NameMe);
-            Controls.Add(pictureBox2);
-            Controls.Add(pictureBox1);
+            //Controls.Add(pictureBox2);
+            //Controls.Add(pictureBox1);
             ClientSize = new Size(875, 511);
             Controls.Add(Player3);
             Controls.Add(Player2);
