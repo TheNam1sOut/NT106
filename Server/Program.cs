@@ -309,7 +309,7 @@ public class Server
 
         while (acceptedClient.Connected && !cancellationToken.IsCancellationRequested)
         {
-            
+            rooms = FindRoombyClientID(acceptedClient);
             try
             {
                 if (rooms != null && rooms.rommbg == 1 && rooms.currentTurnStartTime.HasValue && rooms.ClientId.TryGetValue(acceptedClient, out int currentPlayerIdInRoom))

@@ -263,8 +263,8 @@ namespace UNO
             imojiButon.Click += pictureBox1_Click;
             imojiButon.MouseEnter += pictureBox1_MouseEnter;
             imojiButon.MouseLeave += pictureBox1_MouseLeave;
-            setting.MouseDown += setting_MouseDown;
-            setting.MouseUp += setting_MouseUp;
+            //setting.MouseDown += setting_MouseDown;
+            //setting.MouseUp += setting_MouseUp;
             Room.Text += " " + roomName;
             btnUno.Visible = false;
             btnCatch.Visible = false;
@@ -310,16 +310,16 @@ namespace UNO
             }));
 
         }
-        private void setting_MouseDown(object sender, MouseEventArgs e)
-        {
-            Bitmap settingImage = new Bitmap(setting.Image);
-            setting.Image = AdjustBrightness(settingImage, 0.8f);
-        }
+        //private void setting_MouseDown(object sender, MouseEventArgs e)
+        //{
+        //    Bitmap settingImage = new Bitmap(setting.Image);
+        //    setting.Image = AdjustBrightness(settingImage, 0.8f);
+        //}
 
-        private void setting_MouseUp(object sender, MouseEventArgs e)
-        {
-            setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
-        }
+        //private void setting_MouseUp(object sender, MouseEventArgs e)
+        //{
+        //    setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
+        //}
         private void InitializeCustomComponents()
         {
             imojiButon.Parent = this;
@@ -339,16 +339,16 @@ namespace UNO
             //Enemy.Image = Properties.Resources.avatar_removebg_preview;
             //Enemy.BackColor = Color.Transparent;
             //Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
-            setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
-            setting.BackColor = Color.Transparent;
-            setting.SizeMode = PictureBoxSizeMode.StretchImage;
+            //setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
+            //setting.BackColor = Color.Transparent;
+            //setting.SizeMode = PictureBoxSizeMode.StretchImage;
             foreach (var i in Enumerable.Range(1, 6))
             {
                 var pb = this.Controls[$"Card{i}"] as PictureBox;
                 pb.Click += PlayerCard_Click;
             }
 
-            setting.Cursor = Cursors.Hand;
+            //setting.Cursor = Cursors.Hand;
         }
 
 
@@ -872,7 +872,7 @@ namespace UNO
                         var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
 
-                        var labelControls = new[] { lblTimer, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3  };
+                        var labelControls = new[] { lblTimer, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3  };
                         var labels = new[] { Player1, Me, Player2,Player3 };
 
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
@@ -883,10 +883,10 @@ namespace UNO
                             //pictureBox2,
                             //AvatarPlayer,
                             //Enemy,
-                            setting,
+                            //setting,
                             imojiButon,
                             ClockIcon,
-                            clock1,
+                            //clock1,
                             Card1,
                             Card2,
                             Card3,
@@ -1060,7 +1060,7 @@ namespace UNO
                     else if (msg.StartsWith("PlayerWin: "))
                     {
                         // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { lblTimer, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3 };
+                        var labelControls = new[] { lblTimer, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3 };
                         var labels = new[] { Player1, Me, Player2, Player3 };
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
@@ -1068,10 +1068,10 @@ namespace UNO
                             MiddlePictureBox,
                             //AvatarPlayer,
                             //Enemy,
-                            setting,
+                            //setting,
                             imojiButon,
                             ClockIcon,
-                            clock1,
+                            //clock1,
                             Card1,
                             Card2,
                             Card3,
@@ -1108,7 +1108,7 @@ namespace UNO
                             //hiển thị thông tin liên quan đến kết quả
                             resultLabel.Text = $"{winner} đã chiến thắng!";
                             resultLabel.Visible = true;
-                            scoreLabel.Visible = true;
+                            //scoreLabel.Visible = true;
                             backBtn.Visible = true;
 
 

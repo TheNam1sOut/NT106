@@ -29,10 +29,8 @@
         private void InitializeComponent()
         {
             MiddlePictureBox = new PictureBox();
-            setting = new PictureBox();
             imojiButon = new PictureBox();
             ClockIcon = new PictureBox();
-            clock1 = new PictureBox();
             DrawButton = new Button();
             Card1 = new PictureBox();
             Card2 = new PictureBox();
@@ -61,7 +59,6 @@
             chatInput = new TextBox();
             sendBtn = new Button();
             resultLabel = new Label();
-            scoreLabel = new Label();
             backBtn = new Button();
             Name1 = new Label();
             Name2 = new Label();
@@ -71,17 +68,14 @@
             Number2 = new Label();
             Number1 = new Label();
             lblTimer = new Label();
-            TimeEnemy = new Label();
             Me = new Panel();
             NumberMe = new Label();
             Player1 = new Panel();
             Player2 = new Panel();
             Player3 = new Panel();
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)setting).BeginInit();
             ((System.ComponentModel.ISupportInitialize)imojiButon).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ClockIcon).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)clock1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Card1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Card2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)Card3).BeginInit();
@@ -111,19 +105,6 @@
             MiddlePictureBox.Visible = false;
             MiddlePictureBox.Click += drawCard_Click;
             // 
-            // setting
-            // 
-            setting.BackColor = Color.Transparent;
-            setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
-            setting.Location = new Point(9, 12);
-            setting.Name = "setting";
-            setting.Size = new Size(47, 47);
-            setting.SizeMode = PictureBoxSizeMode.Zoom;
-            setting.TabIndex = 3;
-            setting.TabStop = false;
-            setting.Visible = false;
-            setting.Click += setting_Click_1;
-            // 
             // imojiButon
             // 
             imojiButon.BackColor = Color.Transparent;
@@ -148,18 +129,6 @@
             ClockIcon.TabIndex = 5;
             ClockIcon.TabStop = false;
             ClockIcon.Visible = false;
-            // 
-            // clock1
-            // 
-            clock1.BackColor = Color.Transparent;
-            clock1.Image = Properties.Resources.clock_removebg_preview;
-            clock1.Location = new Point(62, 3);
-            clock1.Name = "clock1";
-            clock1.Size = new Size(66, 59);
-            clock1.SizeMode = PictureBoxSizeMode.StretchImage;
-            clock1.TabIndex = 6;
-            clock1.TabStop = false;
-            clock1.Visible = false;
             // 
             // DrawButton
             // 
@@ -441,19 +410,6 @@
             resultLabel.Text = "KẾT QUẢ";
             resultLabel.Visible = false;
             // 
-            // scoreLabel
-            // 
-            scoreLabel.AutoSize = true;
-            scoreLabel.BackColor = Color.Transparent;
-            scoreLabel.Font = new Font("Segoe UI", 13.2000008F, FontStyle.Italic, GraphicsUnit.Point, 0);
-            scoreLabel.ForeColor = SystemColors.Window;
-            scoreLabel.Location = new Point(13, 373);
-            scoreLabel.Name = "scoreLabel";
-            scoreLabel.Size = new Size(280, 31);
-            scoreLabel.TabIndex = 35;
-            scoreLabel.Text = "Điểm chiến thắng hiện tại: ";
-            scoreLabel.Visible = false;
-            // 
             // backBtn
             // 
             backBtn.BackColor = Color.LimeGreen;
@@ -570,19 +526,6 @@
             lblTimer.Visible = false;
             lblTimer.Click += label1_Click;
             // 
-            // TimeEnemy
-            // 
-            TimeEnemy.BackColor = Color.Transparent;
-            TimeEnemy.Font = new Font("Segoe UI", 21.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            TimeEnemy.Location = new Point(134, 0);
-            TimeEnemy.Name = "TimeEnemy";
-            TimeEnemy.Size = new Size(59, 59);
-            TimeEnemy.TabIndex = 22;
-            TimeEnemy.Text = "10";
-            TimeEnemy.TextAlign = ContentAlignment.MiddleCenter;
-            TimeEnemy.Visible = false;
-            TimeEnemy.Click += TimeEnemy_Click;
-            // 
             // Me
             // 
             Me.Controls.Add(NameMe);
@@ -650,7 +593,6 @@
             Controls.Add(Player1);
             Controls.Add(Me);
             Controls.Add(backBtn);
-            Controls.Add(scoreLabel);
             Controls.Add(resultLabel);
             Controls.Add(sendBtn);
             Controls.Add(chatInput);
@@ -663,7 +605,6 @@
             Controls.Add(isPlay2);
             Controls.Add(isPlay1);
             Controls.Add(ReadyBtn);
-            Controls.Add(TimeEnemy);
             Controls.Add(Card6);
             Controls.Add(SortButton);
             Controls.Add(NextButton);
@@ -675,10 +616,8 @@
             Controls.Add(Card1);
             Controls.Add(DrawButton);
             Controls.Add(lblTimer);
-            Controls.Add(clock1);
             Controls.Add(ClockIcon);
             Controls.Add(imojiButon);
-            Controls.Add(setting);
             Controls.Add(MiddlePictureBox);
             FormBorderStyle = FormBorderStyle.Fixed3D;
             MaximizeBox = false;
@@ -686,10 +625,8 @@
             Text = "Arena";
             Load += Arena_Load;
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).EndInit();
-            ((System.ComponentModel.ISupportInitialize)setting).EndInit();
             ((System.ComponentModel.ISupportInitialize)imojiButon).EndInit();
             ((System.ComponentModel.ISupportInitialize)ClockIcon).EndInit();
-            ((System.ComponentModel.ISupportInitialize)clock1).EndInit();
             ((System.ComponentModel.ISupportInitialize)Card1).EndInit();
             ((System.ComponentModel.ISupportInitialize)Card2).EndInit();
             ((System.ComponentModel.ISupportInitialize)Card3).EndInit();
@@ -715,10 +652,8 @@
         #endregion
 
         private PictureBox MiddlePictureBox;
-        private PictureBox setting;
         private PictureBox imojiButon;
         private PictureBox ClockIcon;
-        private PictureBox clock1;
         private Button DrawButton;
         private PictureBox Card1;
         private PictureBox Card2;
@@ -747,7 +682,6 @@
         private TextBox chatInput;
         private Button sendBtn;
         private Label resultLabel;
-        private Label scoreLabel;
         private Button backBtn;
         private Label Name1;
         private Label Name2;
@@ -757,7 +691,6 @@
         private Label Number2;
         private Label Number1;
         private Label lblTimer;
-        private Label TimeEnemy;
         private Panel Me;
         private Label NumberMe;
         private Panel Player1;
