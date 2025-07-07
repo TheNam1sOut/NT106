@@ -279,6 +279,11 @@ namespace UNO
             Number2.Visible = false;
             Number3.Visible = false;
             NumberMe.Visible = false;
+            Me.Visible = false;
+            Player1.Visible = false;
+            Player2.Visible = false;
+            Player3.Visible = false;    
+
 
 
             this.playerName = playerName;
@@ -866,8 +871,9 @@ namespace UNO
 
                         var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
-                       
-                        var labelControls = new[] { lblTimer, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3 };
+
+                        var labelControls = new[] { lblTimer, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3  };
+                        var labels = new[] { Player1, Me, Player2,Player3 };
 
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
@@ -931,6 +937,10 @@ namespace UNO
                                     control.Visible = true;
                                 }
                                 foreach (var control in labelControls)
+                                {
+                                    control.Visible = true;
+                                }
+                                foreach (var control in labels)
                                 {
                                     control.Visible = true;
                                 }
@@ -1014,10 +1024,10 @@ namespace UNO
                         {
                             UpdateSixCards();
 
-                        int count = playerHand.Count;
+                            int count = playerHand.Count;
                             var mePanel = this.Controls["Me"] as Panel;
                             var lbl = mePanel?.Controls["NumberMe"] as Label;
-                                   if (lbl != null)
+                            if (lbl != null)
                                 lbl.Text = $"Số lá: {count}";
                             // highlight nếu cần
                             if (IsValidMove(card))
@@ -1050,8 +1060,8 @@ namespace UNO
                     else if (msg.StartsWith("PlayerWin: "))
                     {
                         // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { lblTimer, TimeEnemy };
-
+                        var labelControls = new[] { lblTimer, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3 };
+                        var labels = new[] { Player1, Me, Player2, Player3 };
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
                         {
@@ -1069,6 +1079,7 @@ namespace UNO
                             Card5,
                             Card6,
                         };
+                        
                         string winner = msg.Substring("PlayerWin: ".Length).Trim();
                         //this.Invoke((Action)(() =>
                         //    MessageBox.Show($"{winner} đã chiến thắng", "Kết thúc trò chơi", MessageBoxButtons.OK)
@@ -1086,6 +1097,10 @@ namespace UNO
                             foreach (var control in labelControls)
                             {
                                 control.Visible = false;
+                            }
+                            foreach (var control in labels)
+                            {
+                                control.Visible = true;
                             }
                             chatBox.Visible = false;
                             chatInput.Visible = false;
@@ -1232,7 +1247,7 @@ namespace UNO
                             remainingTimeSeconds = timeLimit; // Đặt lại thời gian còn lại
 
                             // Cập nhật highlight người chơi đang đến lượt
-                            
+
 
                             uiTimer.Stop(); // Dừng timer cũ để đặt lại
 
@@ -1477,6 +1492,11 @@ namespace UNO
         }
 
         private void TimeEnemy_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void NameMe_Click(object sender, EventArgs e)
         {
 
         }
