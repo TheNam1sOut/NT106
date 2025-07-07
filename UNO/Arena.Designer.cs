@@ -29,8 +29,6 @@
         private void InitializeComponent()
         {
             MiddlePictureBox = new PictureBox();
-            AvatarPlayer = new PictureBox();
-            Enemy = new PictureBox();
             setting = new PictureBox();
             imojiButon = new PictureBox();
             ClockIcon = new PictureBox();
@@ -67,19 +65,19 @@
             resultLabel = new Label();
             scoreLabel = new Label();
             backBtn = new Button();
-            pictureBox1 = new PictureBox();
-            pictureBox2 = new PictureBox();
             Name1 = new Label();
             Name2 = new Label();
             Name3 = new Label();
             NameMe = new Label();
-            NumberMe = new Label();
             Number3 = new Label();
             Number2 = new Label();
             Number1 = new Label();
+            Me = new Panel();
+            NumberMe = new Label();
+            Player1 = new Panel();
+            Player2 = new Panel();
+            Player3 = new Panel();
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)AvatarPlayer).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)Enemy).BeginInit();
             ((System.ComponentModel.ISupportInitialize)setting).BeginInit();
             ((System.ComponentModel.ISupportInitialize)imojiButon).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ClockIcon).BeginInit();
@@ -94,8 +92,10 @@
             ((System.ComponentModel.ISupportInitialize)isPlay2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)isPlay3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)isPlay4).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
+            Me.SuspendLayout();
+            Player1.SuspendLayout();
+            Player2.SuspendLayout();
+            Player3.SuspendLayout();
             SuspendLayout();
             // 
             // MiddlePictureBox
@@ -110,34 +110,6 @@
             MiddlePictureBox.TabStop = false;
             MiddlePictureBox.Visible = false;
             MiddlePictureBox.Click += drawCard_Click;
-            // 
-            // AvatarPlayer
-            // 
-            AvatarPlayer.BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
-            AvatarPlayer.Cursor = Cursors.Hand;
-            AvatarPlayer.Image = Properties.Resources.avatar_removebg_preview;
-            AvatarPlayer.Location = new Point(71, 419);
-            AvatarPlayer.Name = "AvatarPlayer";
-            AvatarPlayer.Size = new Size(80, 80);
-            AvatarPlayer.SizeMode = PictureBoxSizeMode.StretchImage;
-            AvatarPlayer.TabIndex = 1;
-            AvatarPlayer.TabStop = false;
-            AvatarPlayer.Visible = false;
-            AvatarPlayer.Click += AvatarPlayer_Click;
-            // 
-            // Enemy
-            // 
-            Enemy.BackColor = Color.Transparent;
-            Enemy.Cursor = Cursors.Hand;
-            Enemy.Image = Properties.Resources.avatar_removebg_preview;
-            Enemy.Location = new Point(491, 18);
-            Enemy.Name = "Enemy";
-            Enemy.Size = new Size(80, 80);
-            Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
-            Enemy.TabIndex = 2;
-            Enemy.TabStop = false;
-            Enemy.Visible = false;
-            Enemy.Click += Enemy_Click;
             // 
             // setting
             // 
@@ -520,40 +492,11 @@
             backBtn.Visible = false;
             backBtn.Click += backBtn_Click;
             // 
-            // pictureBox1
-            // 
-            pictureBox1.BackColor = Color.Transparent;
-            pictureBox1.Cursor = Cursors.Hand;
-            pictureBox1.Image = Properties.Resources.avatar_removebg_preview;
-            pictureBox1.Location = new Point(200, 143);
-            pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(80, 80);
-            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
-            pictureBox1.TabIndex = 37;
-            pictureBox1.TabStop = false;
-            pictureBox1.Visible = false;
-            pictureBox1.Click += pictureBox1_Click_1;
-            // 
-            // pictureBox2
-            // 
-            pictureBox2.BackColor = Color.Transparent;
-            pictureBox2.Cursor = Cursors.Hand;
-            pictureBox2.Image = Properties.Resources.avatar_removebg_preview;
-            pictureBox2.Location = new Point(763, 143);
-            pictureBox2.Name = "pictureBox2";
-            pictureBox2.Size = new Size(80, 80);
-            pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
-            pictureBox2.TabIndex = 38;
-            pictureBox2.TabStop = false;
-            pictureBox2.Visible = false;
-            pictureBox2.Click += pictureBox2_Click;
-            // 
             // Name1
             // 
-            Name1.AutoSize = true;
             Name1.BackColor = Color.Transparent;
-            Name1.ForeColor = Color.White;
-            Name1.Location = new Point(754, 120);
+            Name1.ForeColor = Color.Black;
+            Name1.Location = new Point(0, 0);
             Name1.Name = "Name1";
             Name1.Size = new Size(107, 20);
             Name1.TabIndex = 40;
@@ -562,88 +505,131 @@
             // 
             // Name2
             // 
-            Name2.AutoSize = true;
             Name2.BackColor = Color.Transparent;
-            Name2.ForeColor = SystemColors.ButtonHighlight;
-            Name2.Location = new Point(479, 0);
+            Name2.ForeColor = Color.Black;
+            Name2.Location = new Point(1, 0);
             Name2.Name = "Name2";
             Name2.Size = new Size(107, 20);
             Name2.TabIndex = 41;
             Name2.Text = "zzzzSatthuzzzz";
             Name2.TextAlign = ContentAlignment.MiddleCenter;
+            Name2.Click += Name2_Click;
             // 
             // Name3
             // 
-            Name3.AutoSize = true;
             Name3.BackColor = Color.Transparent;
-            Name3.ForeColor = Color.White;
-            Name3.Location = new Point(193, 120);
+            Name3.ForeColor = Color.Black;
+            Name3.Location = new Point(1, 0);
             Name3.Name = "Name3";
             Name3.Size = new Size(107, 20);
             Name3.TabIndex = 42;
-            Name3.Text = "zzzzSatthuzzzz";
+            Name3.Text = "zzzzSatthuzz";
             Name3.TextAlign = ContentAlignment.MiddleCenter;
             Name3.Click += Name3_Click;
             // 
             // NameMe
             // 
-            NameMe.AutoSize = true;
+            NameMe.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             NameMe.BackColor = Color.Transparent;
-            NameMe.ForeColor = Color.White;
-            NameMe.Location = new Point(62, 399);
+            NameMe.ForeColor = Color.Black;
+            NameMe.Location = new Point(3, 0);
             NameMe.Name = "NameMe";
             NameMe.Size = new Size(105, 20);
             NameMe.TabIndex = 39;
             NameMe.Text = "zzzsatthuzzzzz";
             NameMe.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // NumberMe
-            // 
-            NumberMe.AutoSize = true;
-            NumberMe.BackColor = Color.Transparent;
-            NumberMe.ForeColor = Color.White;
-            NumberMe.Location = new Point(157, 350);
-            NumberMe.Name = "NumberMe";
-            NumberMe.Size = new Size(105, 20);
-            NumberMe.TabIndex = 43;
-            NumberMe.Text = "zzzsatthuzzzzz";
-            NumberMe.TextAlign = ContentAlignment.MiddleCenter;
-            // 
             // Number3
             // 
             Number3.AutoSize = true;
-            Number3.BackColor = Color.Transparent;
-            Number3.ForeColor = Color.White;
-            Number3.Location = new Point(286, 153);
+            Number3.BackColor = Color.Cyan;
+            Number3.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            Number3.ForeColor = Color.Red;
+            Number3.Location = new Point(23, 24);
             Number3.Name = "Number3";
-            Number3.Size = new Size(105, 20);
+            Number3.Size = new Size(68, 20);
             Number3.TabIndex = 44;
-            Number3.Text = "zzzsatthuzzzzz";
+            Number3.Text = "Số lá: 15";
             Number3.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // Number2
             // 
             Number2.AutoSize = true;
-            Number2.BackColor = Color.Transparent;
-            Number2.ForeColor = Color.White;
-            Number2.Location = new Point(479, 101);
+            Number2.BackColor = Color.Cyan;
+            Number2.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            Number2.ForeColor = Color.Red;
+            Number2.Location = new Point(22, 24);
             Number2.Name = "Number2";
-            Number2.Size = new Size(105, 20);
+            Number2.Size = new Size(68, 20);
             Number2.TabIndex = 45;
-            Number2.Text = "zzzsatthuzzzzz";
+            Number2.Text = "Số lá: 14";
             Number2.TextAlign = ContentAlignment.MiddleCenter;
+            Number2.Click += Number2_Click;
             // 
             // Number1
             // 
             Number1.AutoSize = true;
-            Number1.BackColor = Color.Transparent;
-            Number1.ForeColor = Color.White;
-            Number1.Location = new Point(661, 153);
+            Number1.BackColor = Color.Cyan;
+            Number1.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            Number1.ForeColor = Color.Red;
+            Number1.Location = new Point(20, 24);
             Number1.Name = "Number1";
-            Number1.Size = new Size(105, 20);
+            Number1.Size = new Size(68, 20);
             Number1.TabIndex = 46;
-            Number1.Text = "zzzsatthuzzzzz";
+            Number1.Text = "Số lá: 13";
             Number1.TextAlign = ContentAlignment.MiddleCenter;
+            Number1.Click += Number1_Click;
+            // 
+            // Me
+            // 
+            Me.Controls.Add(NumberMe);
+            Me.Controls.Add(NameMe);
+            Me.Location = new Point(212, 12);
+            Me.Name = "Me";
+            Me.Size = new Size(111, 47);
+            Me.TabIndex = 47;
+            // 
+            // NumberMe
+            // 
+            NumberMe.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            NumberMe.AutoSize = true;
+            NumberMe.BackColor = Color.Cyan;
+            NumberMe.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            NumberMe.ForeColor = Color.Red;
+            NumberMe.Location = new Point(21, 24);
+            NumberMe.Name = "NumberMe";
+            NumberMe.Size = new Size(68, 20);
+            NumberMe.TabIndex = 43;
+            NumberMe.Text = "Số lá: 12";
+            NumberMe.TextAlign = ContentAlignment.MiddleCenter;
+            NumberMe.Click += NumberMe_Click;
+            // 
+            // Player1
+            // 
+            Player1.Controls.Add(Name1);
+            Player1.Controls.Add(Number1);
+            Player1.Location = new Point(341, 12);
+            Player1.Name = "Player1";
+            Player1.Size = new Size(111, 47);
+            Player1.TabIndex = 48;
+            // 
+            // Player2
+            // 
+            Player2.Controls.Add(Name2);
+            Player2.Controls.Add(Number2);
+            Player2.Location = new Point(469, 12);
+            Player2.Name = "Player2";
+            Player2.Size = new Size(111, 47);
+            Player2.TabIndex = 49;
+            // 
+            // Player3
+            // 
+            Player3.Controls.Add(Name3);
+            Player3.Controls.Add(Number3);
+            Player3.Location = new Point(599, 12);
+            Player3.Name = "Player3";
+            Player3.Size = new Size(111, 47);
+            Player3.TabIndex = 50;
             // 
             // Arena
             // 
@@ -652,16 +638,10 @@
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(875, 511);
-            Controls.Add(Number1);
-            Controls.Add(Number2);
-            Controls.Add(Number3);
-            Controls.Add(NumberMe);
-            Controls.Add(Name3);
-            Controls.Add(Name2);
-            Controls.Add(Name1);
-            Controls.Add(NameMe);
-            Controls.Add(pictureBox2);
-            Controls.Add(pictureBox1);
+            Controls.Add(Player3);
+            Controls.Add(Player2);
+            Controls.Add(Player1);
+            Controls.Add(Me);
             Controls.Add(backBtn);
             Controls.Add(scoreLabel);
             Controls.Add(resultLabel);
@@ -692,8 +672,6 @@
             Controls.Add(ClockIcon);
             Controls.Add(imojiButon);
             Controls.Add(setting);
-            Controls.Add(Enemy);
-            Controls.Add(AvatarPlayer);
             Controls.Add(MiddlePictureBox);
             FormBorderStyle = FormBorderStyle.Fixed3D;
             MaximizeBox = false;
@@ -701,8 +679,6 @@
             Text = "Arena";
             Load += Arena_Load;
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).EndInit();
-            ((System.ComponentModel.ISupportInitialize)AvatarPlayer).EndInit();
-            ((System.ComponentModel.ISupportInitialize)Enemy).EndInit();
             ((System.ComponentModel.ISupportInitialize)setting).EndInit();
             ((System.ComponentModel.ISupportInitialize)imojiButon).EndInit();
             ((System.ComponentModel.ISupportInitialize)ClockIcon).EndInit();
@@ -717,8 +693,14 @@
             ((System.ComponentModel.ISupportInitialize)isPlay2).EndInit();
             ((System.ComponentModel.ISupportInitialize)isPlay3).EndInit();
             ((System.ComponentModel.ISupportInitialize)isPlay4).EndInit();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)pictureBox2).EndInit();
+            Me.ResumeLayout(false);
+            Me.PerformLayout();
+            Player1.ResumeLayout(false);
+            Player1.PerformLayout();
+            Player2.ResumeLayout(false);
+            Player2.PerformLayout();
+            Player3.ResumeLayout(false);
+            Player3.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -726,8 +708,6 @@
         #endregion
 
         private PictureBox MiddlePictureBox;
-        private PictureBox AvatarPlayer;
-        private PictureBox Enemy;
         private PictureBox setting;
         private PictureBox imojiButon;
         private PictureBox ClockIcon;
@@ -764,15 +744,17 @@
         private Label resultLabel;
         private Label scoreLabel;
         private Button backBtn;
-        private PictureBox pictureBox1;
-        private PictureBox pictureBox2;
         private Label Name1;
         private Label Name2;
         private Label Name3;
         private Label NameMe;
-        private Label NumberMe;
         private Label Number3;
         private Label Number2;
         private Label Number1;
+        private Panel Me;
+        private Label NumberMe;
+        private Panel Player1;
+        private Panel Player2;
+        private Panel Player3;
     }
 }

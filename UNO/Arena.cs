@@ -300,12 +300,12 @@ namespace UNO
             imojiButon.Cursor = Cursors.Hand;
             imojiButon.Click += pictureBox1_Click;
             this.DoubleBuffered = true;
-            AvatarPlayer.Image = Properties.Resources.avatar_removebg_preview;
-            AvatarPlayer.BackColor = Color.Transparent;
-            AvatarPlayer.SizeMode = PictureBoxSizeMode.StretchImage;
-            Enemy.Image = Properties.Resources.avatar_removebg_preview;
-            Enemy.BackColor = Color.Transparent;
-            Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
+            //AvatarPlayer.Image = Properties.Resources.avatar_removebg_preview;
+            //AvatarPlayer.BackColor = Color.Transparent;
+            //AvatarPlayer.SizeMode = PictureBoxSizeMode.StretchImage;
+            //Enemy.Image = Properties.Resources.avatar_removebg_preview;
+            //Enemy.BackColor = Color.Transparent;
+            //Enemy.SizeMode = PictureBoxSizeMode.StretchImage;
             setting.Image = Properties.Resources.light_blue_settings_gear_22453__1_;
             setting.BackColor = Color.Transparent;
             setting.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -838,16 +838,16 @@ namespace UNO
 
                         var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { TimeMe, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe,Number1,Number2,Number3 };
+                        var labelControls = new[] { TimeMe, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3 };
 
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
                         {
                             MiddlePictureBox,
-                            pictureBox1,
-                            pictureBox2,
-                            AvatarPlayer,
-                            Enemy,
+                            //pictureBox1,
+                            //pictureBox2,
+                            //AvatarPlayer,
+                            //Enemy,
                             setting,
                             imojiButon,
                             ClockIcon,
@@ -957,6 +957,7 @@ namespace UNO
                     else if (msg.StartsWith("Turn: "))
                     {
                         int id = int.Parse(msg.Substring(6));
+                        UpdatePlayerPanelColor(id);
                         isPlayerTurn = (id == myPlayerId);
                         DrawButton.Enabled = isPlayerTurn && pendingDraw == 0;
 
@@ -983,6 +984,12 @@ namespace UNO
                         this.Invoke((Action)(() =>
                         {
                             UpdateSixCards();
+
+                        int count = playerHand.Count;
+                            var mePanel = this.Controls["Me"] as Panel;
+                            var lbl = mePanel?.Controls["NumberMe"] as Label;
+                                   if (lbl != null)
+                                lbl.Text = $"Số lá: {count}";
                             // highlight nếu cần
                             if (IsValidMove(card))
                             {
@@ -1020,8 +1027,8 @@ namespace UNO
                         var pictureBoxControls = new[]
                         {
                             MiddlePictureBox,
-                            AvatarPlayer,
-                            Enemy,
+                            //AvatarPlayer,
+                            //Enemy,
                             setting,
                             imojiButon,
                             ClockIcon,
@@ -1120,7 +1127,10 @@ namespace UNO
                             for (int i = 1; i <= 3; i++)
                             {
                                 int idx = (myPlayerId - 1 + i) % 4;
-                                var lbl = this.Controls[$"Name{i}"] as Label;
+                                // Lấy Panel chứa label
+                                var panel = this.Controls[$"Player{i}"] as Panel;
+                                var lbl = panel?.Controls[$"Name{i}"] as Label;
+
                                 lbl?.Invoke((Action)(() => lbl.Text = parts[idx]));
                             }
                         }
@@ -1148,12 +1158,19 @@ namespace UNO
                                     int offset = (pid - myPlayerId + 4) % 4; // Kết quả là 1,2 hoặc 3
                                     labelName = $"Number{offset}";
                                 }
-                                var lbl = this.Controls[labelName] as Label;
-                                if (lbl != null)
-                                {
-                                    lbl.Text =$"Số lá: {count.ToString()}"; // Hiển thị số lá
-                                    lbl.Visible = true;          // Cho hiện Label nếu đang ẩn
-                                }
+                                 if (pid == myPlayerId)
+                                     {
+                                    var mePanel = this.Controls["Me"] as Panel;
+                                    mePanel?.Controls["NumberMe"].Invoke((Action)(() =>
+                                    (mePanel.Controls["NumberMe"] as Label).Text = $"Số lá: {count}"));
+                                     }
+                                 else
+                                     {
+                                    int offset = (pid - myPlayerId + 4) % 4;
+                                    var panel = this.Controls[$"Player{offset}"] as Panel;
+                                    panel?.Controls[$"Number{offset}"].Invoke((Action)(() =>
+                                    (panel.Controls[$"Number{offset}"] as Label).Text = $"Số lá: {count}"));
+                                     }
                             }));
                         }
                     }
@@ -1195,6 +1212,41 @@ namespace UNO
                 this.Invoke((Action)(() =>
                     MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 ));
+            }
+        }
+        private void UpdatePlayerPanelColor(int currentTurn)
+        {
+            // Đặt tất cả panel về màu mặc định
+            Me.BackColor = Color.White;
+            Player1.BackColor = Color.White;
+            Player2.BackColor = Color.White;
+            Player3.BackColor = Color.White;
+
+            // Tính toán ánh xạ từ playerId đến panel dựa trên myPlayerId
+            // Tạo mảng ánh xạ ID của người chơi theo thứ tự tương đối
+            int[] playerOrder = new int[4];
+            for (int i = 0; i < 4; i++)
+            {
+                // Tính ID của người chơi tại vị trí thứ i (bắt đầu từ myPlayerId)
+                playerOrder[i] = (myPlayerId + i - 1) % 4 + 1; // Tuần hoàn từ 1 đến 4
+            }
+
+            // Xác định panel tương ứng với currentTurn
+            if (currentTurn == playerOrder[0]) // NameMe
+            {
+                Me.BackColor = Color.Yellow;
+            }
+            else if (currentTurn == playerOrder[1]) // Name1
+            {
+                Player1.BackColor = Color.Yellow;
+            }
+            else if (currentTurn == playerOrder[2]) // Name2
+            {
+                Player2.BackColor = Color.Yellow;
+            }
+            else if (currentTurn == playerOrder[3]) // Name3
+            {
+                Player3.BackColor = Color.Yellow;
             }
         }
         private async void ReadyBtn_Click(object sender, EventArgs e)
@@ -1304,6 +1356,31 @@ namespace UNO
         }
 
         private void pictureBox1_Click_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void panel1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void NumberMe_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Number1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Name2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Number2_Click(object sender, EventArgs e)
         {
 
         }
