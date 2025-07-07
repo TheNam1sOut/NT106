@@ -128,9 +128,9 @@
             // 
             imojiButon.BackColor = Color.Transparent;
             imojiButon.Image = Properties.Resources._19822c18e912ad0ffb2ad2faed8a61af__1__removebg_preview1;
-            imojiButon.Location = new Point(9, 440);
+            imojiButon.Location = new Point(109, 332);
             imojiButon.Name = "imojiButon";
-            imojiButon.Size = new Size(56, 51);
+            imojiButon.Size = new Size(29, 29);
             imojiButon.SizeMode = PictureBoxSizeMode.StretchImage;
             imojiButon.TabIndex = 4;
             imojiButon.TabStop = false;
@@ -332,6 +332,7 @@
             Room.Location = new Point(9, 68);
             Room.Margin = new Padding(3, 4, 3, 4);
             Room.Name = "Room";
+            Room.ReadOnly = true;
             Room.Size = new Size(114, 27);
             Room.TabIndex = 26;
             Room.Text = "Room";
@@ -433,7 +434,7 @@
             resultLabel.BackColor = Color.Transparent;
             resultLabel.Font = new Font("Segoe UI", 19.8000011F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
             resultLabel.ForeColor = SystemColors.Window;
-            resultLabel.Location = new Point(341, 16);
+            resultLabel.Location = new Point(9, 315);
             resultLabel.Name = "resultLabel";
             resultLabel.Size = new Size(164, 46);
             resultLabel.TabIndex = 34;
@@ -446,7 +447,7 @@
             scoreLabel.BackColor = Color.Transparent;
             scoreLabel.Font = new Font("Segoe UI", 13.2000008F, FontStyle.Italic, GraphicsUnit.Point, 0);
             scoreLabel.ForeColor = SystemColors.Window;
-            scoreLabel.Location = new Point(279, 101);
+            scoreLabel.Location = new Point(13, 373);
             scoreLabel.Name = "scoreLabel";
             scoreLabel.Size = new Size(280, 31);
             scoreLabel.TabIndex = 35;
@@ -458,7 +459,7 @@
             backBtn.BackColor = Color.LimeGreen;
             backBtn.Font = new Font("Segoe UI", 15F, FontStyle.Bold, GraphicsUnit.Point, 0);
             backBtn.ForeColor = SystemColors.ButtonHighlight;
-            backBtn.Location = new Point(358, 263);
+            backBtn.Location = new Point(13, 419);
             backBtn.Name = "backBtn";
             backBtn.Size = new Size(181, 80);
             backBtn.TabIndex = 36;
