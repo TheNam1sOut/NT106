@@ -866,7 +866,7 @@ namespace UNO
 
                         var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { TimeMe, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3 };
+                       
                         var labelControls = new[] { lblTimer, TimeEnemy, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3 };
 
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
@@ -1173,38 +1173,52 @@ namespace UNO
                             && int.TryParse(parts[0], out int pid)
                             && int.TryParse(parts[1], out int count))
                         {
+                            // TOÀN BỘ LOGIC CẬP NHẬT UI NÊN NẰM TRONG MỘT KHỐI INVOKE DUY NHẤT
                             this.Invoke((Action)(() =>
                             {
-                                string labelName;
                                 if (pid == myPlayerId)
                                 {
-                                    // Chính mình
-                                    labelName = "NumberMe";
-                                }
-                                else
-                                {
-                                    // Xác định vị trí của đối thủ tương ứng với Name1/2/3
-                                    int offset = (pid - myPlayerId + 4) % 4; // Kết quả là 1,2 hoặc 3
-                                    labelName = $"Number{offset}";
-                                }
-                                 if (pid == myPlayerId)
-                                     {
                                     var mePanel = this.Controls["Me"] as Panel;
-                                    mePanel?.Controls["NumberMe"].Invoke((Action)(() =>
-                                    (mePanel.Controls["NumberMe"] as Label).Text = $"Số lá: {count}"));
-                                     }
-                                 else
-                                     {
-                                    int offset = (pid - myPlayerId + 4) % 4;
-                                    var panel = this.Controls[$"Player{offset}"] as Panel;
-                                    panel?.Controls[$"Number{offset}"].Invoke((Action)(() =>
-                                    (panel.Controls[$"Number{offset}"] as Label).Text = $"Số lá: {count}"));
-                                     }
-                                var lbl = this.Controls[labelName] as Label;
-                                if (lbl != null)
+                                    if (mePanel != null) // KIỂM TRA NULL CHO PANEL
+                                    {
+                                        var numberMeLabel = mePanel.Controls["NumberMe"] as Label;
+                                        if (numberMeLabel != null) // KIỂM TRA NULL CHO LABEL BÊN TRONG PANEL
+                                        {
+                                            numberMeLabel.Text = $"Số lá: {count}";
+                                            numberMeLabel.Visible = true; // Đảm bảo hiển thị nếu ẩn
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine("[DEBUG] Label 'NumberMe' not found inside 'Me' panel.");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("[DEBUG] Panel 'Me' not found on the form.");
+                                    }
+                                }
+                                else // Đối thủ
                                 {
-                                    lbl.Text = $"Số lá: {count.ToString()}"; // Hiển thị số lá
-                                    lbl.Visible = true;          // Cho hiện Label nếu đang ẩn
+                                    int offset = (pid - myPlayerId + 4) % 4; // Tính offset đúng cho đối thủ
+                                                                             // Giả sử tên Panel của đối thủ là "Player1", "Player2", "Player3"
+                                    var panel = this.Controls[$"Player{offset}"] as Panel;
+                                    if (panel != null) // KIỂM TRA NULL CHO PANEL
+                                    {
+                                        var numberLabel = panel.Controls[$"Number{offset}"] as Label;
+                                        if (numberLabel != null) // KIỂM TRA NULL CHO LABEL BÊN TRONG PANEL
+                                        {
+                                            numberLabel.Text = $"Số lá: {count}";
+                                            numberLabel.Visible = true; // Đảm bảo hiển thị nếu ẩn
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine($"[DEBUG] Label 'Number{offset}' not found inside 'Player{offset}' panel.");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"[DEBUG] Panel 'Player{offset}' not found on the form.");
+                                    }
                                 }
                             }));
                         }
@@ -1241,6 +1255,16 @@ namespace UNO
                             }
                         }
                     }
+                    else if (msg.StartsWith("Timeout:")) // <--- Kiểm tra logic xử lý tin nhắn Timeout
+                    {
+                        string timeoutMessage = msg.Substring("Timeout:".Length).Trim();
+                        MessageBox.Show(timeoutMessage, "Hết thời gian!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        uiTimer.Stop(); // <--- Đảm bảo timer dừng
+                        lblTimer.Text = "Hết giờ!"; // <--- Cập nhật label
+                        lblTimer.ForeColor = Color.Red; // <--- Đổi màu
+                                                        // Vô hiệu hóa các nút hành động của tôi
+                    }
+
 
 
 

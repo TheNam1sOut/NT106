@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -313,42 +314,78 @@ public class Server
             {
                 if (rooms != null && rooms.rommbg == 1 && rooms.currentTurnStartTime.HasValue && rooms.ClientId.TryGetValue(acceptedClient, out int currentPlayerIdInRoom))
                 {
-                    if (rooms.currentTurn == currentPlayerIdInRoom) // Chỉ kiểm tra timer cho người chơi đang đến lượt
+                    if (rooms.currentTurn == currentPlayerIdInRoom)
                     {
                         TimeSpan elapsed = DateTime.UtcNow - rooms.currentTurnStartTime.Value;
                         if (elapsed.TotalSeconds > Room.TURN_TIME_LIMIT_SECONDS)
                         {
-                            Console.WriteLine($"[DEBUG] Người chơi {username} (ID: {rooms.ClientId[acceptedClient]}) trong phòng {rooms.id} đã hết thời gian. Tự động rút bài.");
+                            try // Đặt trong try-catch như chúng ta đã thảo luận
+                            {
+                                Console.WriteLine($"[DEBUG] Người chơi {authenticatedPlayers[acceptedClient].Username} (ID: {rooms.ClientId[acceptedClient]}) trong phòng {rooms.id} đã hết thời gian. Tự động rút bài.");
 
-                            // Tùy chọn: Gửi thông báo hết thời gian cho client
-                            acceptedClient.Send(Encoding.UTF8.GetBytes("Timeout: Bạn không đánh bài hoặc rút bài kịp thời. Tự động rút một lá.\n"));
+                                acceptedClient.Send(Encoding.UTF8.GetBytes("Timeout: Bạn không đánh bài hoặc rút bài kịp thời. Tự động rút một lá.\n"));
 
-                            // Logic tự động rút bài do hết thời gian
-                            if (rooms.Dataqueue.Count == 0) RefillDrawPile(rooms);
-                            string newCard = rooms.Dataqueue.Dequeue();
-                            rooms.playerHands[rooms.ClientId[acceptedClient]].Enqueue(newCard);
-                            acceptedClient.Send(Encoding.UTF8.GetBytes($"DrawCard: {newCard}\n")); // Gửi lá bài đã rút cho người chơi hết thời gian
+                                if (rooms.Dataqueue.Count == 0) RefillDrawPile(rooms);
+                                string newCard = rooms.Dataqueue.Dequeue();
+                                rooms.playerHands[rooms.ClientId[acceptedClient]].Enqueue(newCard);
+                                acceptedClient.Send(Encoding.UTF8.GetBytes($"DrawCard: {newCard}\n"));
 
-                            // Cập nhật và thông báo số bài còn lại của người chơi
-                            int remaining = rooms.playerHands[rooms.ClientId[acceptedClient]].Count;
-                            Broadcast(rooms, $"Remaining: {rooms.ClientId[acceptedClient]}:{remaining}\n");
+                                int remaining = rooms.playerHands[rooms.ClientId[acceptedClient]].Count;
+                                Broadcast(rooms, $"Remaining: {rooms.ClientId[acceptedClient]}:{remaining}\n");
 
-                            rooms.pendingDrawCards = 0; // Đặt lại pendingDrawCards vì đây là một lượt rút bài do hết thời gian
-                            Broadcast(rooms, $"PendingDraw: 0\n"); // Cập nhật pendingDrawCards cho tất cả client
+                                rooms.pendingDrawCards = 0;
+                                Broadcast(rooms, $"PendingDraw: 0\n");
 
-                            // Chuyển lượt sau khi tự động rút bài
-                            int next = nextplayer(rooms.ClientId[acceptedClient], rooms.isReversed);
-                            rooms.currentTurn = next;
-                            Broadcast(rooms, $"Turn: {rooms.currentTurn}\n");
+                                int next = nextplayer(rooms.ClientId[acceptedClient], rooms.isReversed);
+                                rooms.currentTurn = next;
+                                Broadcast(rooms, $"Turn: {rooms.currentTurn}\n");
 
-                            // Đặt lại thời gian cho lượt của người chơi tiếp theo
-                            rooms.currentTurnStartTime = DateTime.UtcNow;
-                            Broadcast(rooms, $"TurnTimerStart: {rooms.currentTurn}|{Room.TURN_TIME_LIMIT_SECONDS}\n"); // Thông báo cho client về việc bắt đầu lại timer
+                                rooms.currentTurnStartTime = DateTime.UtcNow;
+                                Broadcast(rooms, $"TurnTimerStart: {rooms.currentTurn}|{Room.TURN_TIME_LIMIT_SECONDS}\n");
 
-                            continue; // Bỏ qua xử lý tin nhắn đến trong vòng lặp này, chuyển sang vòng lặp tiếp theo
+                                // Sau khi xử lý timeout, tiếp tục vòng lặp
+                                // Không cần `continue;` ở đây nếu bạn cấu trúc lại như dưới
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[SERVER ERROR] Lỗi khi xử lý phạt người chơi hết giờ {authenticatedPlayers[acceptedClient].Username}: {ex.Message}");
+                            }
                         }
                     }
                 }
+
+                // Bước 2: Lắng nghe dữ liệu từ client nhưng KHÔNG chặn vĩnh viễn
+                // Sử dụng Task.WhenAny để chờ đợi giữa việc đọc dữ liệu hoặc một khoảng thời gian nhỏ
+                var receiveTask = stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).AsTask();
+                var delayTask = Task.Delay(100); // Đợi 100ms để vòng lặp có thể kiểm tra timer lại
+
+                var completedTask = await Task.WhenAny(receiveTask, delayTask);
+
+                if (completedTask == receiveTask)
+                {
+                    int bytesRead = receiveTask.Result; // Lấy kết quả bytesRead
+                    if (bytesRead == 0) // Client disconnected
+                    {
+                        Console.WriteLine("[SERVER] Client disconnected gracefully.");
+                        break;
+                    }
+
+                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
+                    // Console.WriteLine($"[SERVER] Received from {authenticatedPlayers[acceptedClient].Username}: {message}");
+                    // Process the received message
+                    // Ví dụ: ProcessClientMessage(acceptedClient, message, rooms);
+                    // Bạn cần có một phương thức để xử lý các loại tin nhắn khác (PlayCard, DrawCard, etc.)
+                    // Có thể gọi một phương thức riêng biệt cho phần này để giữ cho HandleClient gọn gàng.
+                }
+                // else if (completedTask == delayTask)
+                // {
+                //     // Không có dữ liệu nhận được trong 100ms, vòng lặp sẽ tiếp tục
+                //     // và kiểm tra timer lại ở đầu vòng lặp tiếp theo
+                // }
+
+                // Thêm một chút delay ngắn để tránh vòng lặp quá nhanh gây tốn CPU
+                // (nếu không có dữ liệu nào được nhận hoặc timer hết)
+                await Task.Delay(10);
                 // Check for cancellation before receiving data
                 if (cancellationToken.IsCancellationRequested)
                 {
