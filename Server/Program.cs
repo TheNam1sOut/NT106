@@ -319,7 +319,7 @@ public class Server
                         TimeSpan elapsed = DateTime.UtcNow - rooms.currentTurnStartTime.Value;
                         if (elapsed.TotalSeconds > Room.TURN_TIME_LIMIT_SECONDS)
                         {
-                            try // Đặt trong try-catch như chúng ta đã thảo luận
+                            try 
                             {
                                 Console.WriteLine($"[DEBUG] Người chơi {authenticatedPlayers[acceptedClient].Username} (ID: {rooms.ClientId[acceptedClient]}) trong phòng {rooms.id} đã hết thời gian. Tự động rút bài.");
 
@@ -354,38 +354,7 @@ public class Server
                     }
                 }
 
-                // Bước 2: Lắng nghe dữ liệu từ client nhưng KHÔNG chặn vĩnh viễn
-                // Sử dụng Task.WhenAny để chờ đợi giữa việc đọc dữ liệu hoặc một khoảng thời gian nhỏ
-                var receiveTask = stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).AsTask();
-                var delayTask = Task.Delay(100); // Đợi 100ms để vòng lặp có thể kiểm tra timer lại
-
-                var completedTask = await Task.WhenAny(receiveTask, delayTask);
-
-                if (completedTask == receiveTask)
-                {
-                    int bytesRead = receiveTask.Result; // Lấy kết quả bytesRead
-                    if (bytesRead == 0) // Client disconnected
-                    {
-                        Console.WriteLine("[SERVER] Client disconnected gracefully.");
-                        break;
-                    }
-
-                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
-                    // Console.WriteLine($"[SERVER] Received from {authenticatedPlayers[acceptedClient].Username}: {message}");
-                    // Process the received message
-                    // Ví dụ: ProcessClientMessage(acceptedClient, message, rooms);
-                    // Bạn cần có một phương thức để xử lý các loại tin nhắn khác (PlayCard, DrawCard, etc.)
-                    // Có thể gọi một phương thức riêng biệt cho phần này để giữ cho HandleClient gọn gàng.
-                }
-                // else if (completedTask == delayTask)
-                // {
-                //     // Không có dữ liệu nhận được trong 100ms, vòng lặp sẽ tiếp tục
-                //     // và kiểm tra timer lại ở đầu vòng lặp tiếp theo
-                // }
-
-                // Thêm một chút delay ngắn để tránh vòng lặp quá nhanh gây tốn CPU
-                // (nếu không có dữ liệu nào được nhận hoặc timer hết)
-                await Task.Delay(10);
+               
                 // Check for cancellation before receiving data
                 if (cancellationToken.IsCancellationRequested)
                 {
