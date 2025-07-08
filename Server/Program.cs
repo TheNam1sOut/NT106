@@ -817,7 +817,7 @@ public class Server
                     {
                         // Xác định người thắng và thông báo cho tất cả client
                         string winner = room.player[playerId].Item1;
-                        await SaveGameHistory(room, playerId);
+           
                         Broadcast(room, $"PlayerWin: {winner}\n");
                         try
                         {
