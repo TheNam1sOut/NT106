@@ -150,6 +150,58 @@ public class Server
             Console.WriteLine($"Chi tiết: {ex.StackTrace}");
         }
     }
+    public async Task SaveGameHistory(Room room, int winnerPlayerId)
+    {
+        if (db == null)
+        {
+            Console.WriteLine("[ERROR] Firestore database not initialized. Cannot save game history.");
+            return;
+        }
+
+        try
+        {
+            string winnerUsername = room.player[winnerPlayerId].Item1;
+
+            // Chuẩn bị dữ liệu cho document game history
+            var gameHistoryData = new Dictionary<string, object>
+        {
+            { "roomId", room.id },
+            { "startTime", room.gameStartTime }, // Thời gian bắt đầu ván đấu
+            { "endTime", FieldValue.ServerTimestamp }, // Thời gian kết thúc (server timestamp)
+            { "winnerUid", room.player[winnerPlayerId].Item1 }, // Username/UID của người thắng
+            { "winnerUsername", winnerUsername }, // Tên hiển thị của người thắng
+
+            // Lưu thông tin tất cả người chơi
+            { "players", new List<object>() }
+        };
+
+            var playersList = (List<object>)gameHistoryData["players"];
+            foreach (var kvp in room.player)
+            {
+                if (!string.IsNullOrEmpty(kvp.Value.Item1)) // Chỉ thêm người chơi thực sự tham gia
+                {
+                    playersList.Add(new Dictionary<string, object>
+                {
+                    { "uid", kvp.Value.Item1 },
+                    { "username", kvp.Value.Item1 },
+                    { "isWinner", kvp.Key == winnerPlayerId },
+                    { "finalCardCount", room.playerHands.ContainsKey(kvp.Key) ? room.playerHands[kvp.Key].Count : 0 } // Số lá bài còn lại
+                });
+                }
+            }
+
+            // Thêm document mới vào collection "game_history"
+            CollectionReference gameHistoryRef = db.Collection("game_history");
+            await gameHistoryRef.AddAsync(gameHistoryData);
+
+            Console.WriteLine($"[Firestore] Đã lưu lịch sử ván đấu {room.id} vào collection 'game_history'. Người thắng: {winnerUsername}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Lỗi khi lưu lịch sử ván đấu: {ex.Message}");
+            Console.WriteLine($"[ERROR] Stack trace: {ex.StackTrace}");
+        }
+    }
     public async void TestFirestoreConnection()
     {
         if (db == null)
@@ -613,6 +665,7 @@ public class Server
                         {
                             Console.WriteLine($"[DEBUG] Starting new game in room {room.id}. rommbg={room.rommbg}, sumcountrd={room.sumcountrd}");
                             room.rommbg = 1;
+                            room.gameStartTime = DateTime.UtcNow;
                             foreach (var sock in room.ClientId.Keys)
                             {
                                 int id = room.ClientId[sock];
@@ -764,7 +817,7 @@ public class Server
                     {
                         // Xác định người thắng và thông báo cho tất cả client
                         string winner = room.player[playerId].Item1;
-
+                        await SaveGameHistory(room, playerId);
                         Broadcast(room, $"PlayerWin: {winner}\n");
                         try
                         {
@@ -790,6 +843,7 @@ public class Server
                         {
                             Console.WriteLine($"[ERROR] Lỗi khi cập nhật điểm cho người chơi {winner}: {firestoreEX.Message}");
                         }
+                        
                         DeleteRoom(room);
                     }
 
@@ -1223,9 +1277,10 @@ public class Server
                || card == "DP";
     }
 
-    private class Room
+    public class Room
     {
         //thêm constructor tùy chỉnh sau
+        public DateTime? gameStartTime; // Thời điểm bắt đầu ván đấu
         public DateTime? currentTurnStartTime; // Thời điểm bắt đầu lượt chơi hiện tại
         public const int TURN_TIME_LIMIT_SECONDS = 15; // Giới hạn 10 giây
         public int currentTurn;
