@@ -1394,8 +1394,11 @@ public class Server
     {
         //lần lượt khởi tạo IPEndPoint và socket, và bind socket này với IPEndPoint của server
         //để có thể tạo ra một TCPListener
-        IPAddress serverIP = IPAddress.Parse("127.0.0.1");
-        IPEndPoint serverIPEP = new IPEndPoint(serverIP, 10000);
+        //IPAddress serverIP = IPAddress.Parse("127.0.0.1");
+        IPAddress serverIP = IPAddress.Any;
+        var portStr = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+        int port = int.Parse(portStr);
+        IPEndPoint serverIPEP = new IPEndPoint(serverIP, port);
 
         serverSocket = new Socket(
             AddressFamily.InterNetwork,
