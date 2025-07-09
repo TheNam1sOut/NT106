@@ -73,6 +73,7 @@
             Player1 = new Panel();
             Player2 = new Panel();
             Player3 = new Panel();
+            CurentColor = new Label();
             ((System.ComponentModel.ISupportInitialize)MiddlePictureBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)imojiButon).BeginInit();
             ((System.ComponentModel.ISupportInitialize)ClockIcon).BeginInit();
@@ -581,6 +582,18 @@
             Player3.Size = new Size(111, 47);
             Player3.TabIndex = 50;
             // 
+            // CurentColor
+            // 
+            CurentColor.AutoSize = true;
+            CurentColor.BackColor = Color.White;
+            CurentColor.ForeColor = Color.Black;
+            CurentColor.Location = new Point(398, 144);
+            CurentColor.Name = "CurentColor";
+            CurentColor.Size = new Size(91, 20);
+            CurentColor.TabIndex = 51;
+            CurentColor.Text = "Màu hiện tại";
+            CurentColor.TextAlign = ContentAlignment.MiddleCenter;
+            // 
             // Arena
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -588,6 +601,7 @@
             BackgroundImage = Properties.Resources.uno_card_red_poster_fahn507dk0y40lko;
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(875, 511);
+            Controls.Add(CurentColor);
             Controls.Add(Player3);
             Controls.Add(Player2);
             Controls.Add(Player1);
@@ -696,5 +710,6 @@
         private Panel Player1;
         private Panel Player2;
         private Panel Player3;
+        private Label CurentColor;
     }
 }

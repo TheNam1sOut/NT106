@@ -283,6 +283,7 @@ namespace UNO
             Player1.Visible = false;
             Player2.Visible = false;
             Player3.Visible = false;    
+            CurentColor.Visible = false;
 
 
 
@@ -872,7 +873,7 @@ namespace UNO
                         var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
                         // lưu mảng toàn bộ các controls trong form arena
 
-                        var labelControls = new[] { lblTimer, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3  };
+                        var labelControls = new[] { lblTimer, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3, CurentColor  };
                         var labels = new[] { Player1, Me, Player2,Player3 };
 
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
@@ -965,8 +966,17 @@ namespace UNO
                     {
                         var p = msg.Substring(9).Split('|');
                         currentMiddleCard = p[0].Trim();
+
                         // Cập nhật màu: nếu có wild chọn màu thì p[1], ngược lại lấy màu từ chữ cái đầu
                         currentColor = p.Length > 1 ? p[1][0] : currentMiddleCard[0];
+                        if (p.Length > 1 && p[1][0] != 'W')
+                        {
+                            currentColor = p[1][0];
+
+                            // Cập nhật background của label hiển thị màu
+                            CurentColor.BackColor = ColorFromChar(currentColor);
+                        }
+
 
                         // **QUAN TRỌNG**: Cập nhật giá trị (value) mới để cho phép đánh cùng value
                         //   Wild: DD (chọn màu), DP (+4) giữ nguyên tên
@@ -1060,7 +1070,7 @@ namespace UNO
                     else if (msg.StartsWith("PlayerWin: "))
                     {
                         // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { lblTimer, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3 };
+                        var labelControls = new[] { lblTimer, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3, CurentColor };
                         var labels = new[] { Player1, Me, Player2, Player3 };
                         var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
                         var pictureBoxControls = new[]
@@ -1423,6 +1433,17 @@ namespace UNO
             this.Hide();
             Menu Form1 = new Menu(playerName, TcpClient);
             Form1.Show();
+        }
+        private Color ColorFromChar(char c)
+        {
+            switch (c)
+            {
+                case 'R': return Color.Red;
+                case 'G': return Color.Green;
+                case 'B': return Color.Blue;
+                case 'Y': return Color.Yellow;
+                default: return SystemColors.Control;  
+            }
         }
 
         private async void Arena_FormClosing(object sender, FormClosingEventArgs e)
