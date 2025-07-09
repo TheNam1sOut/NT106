@@ -20,8 +20,13 @@ namespace UNO
             try
             {
                 player = new TcpClient();
-                IPAddress serverIP = IPAddress.Parse("127.0.0.1"); //server IP
-                player.Connect(serverIP, 10000);
+                //IPAddress serverIP = IPAddress.Parse("127.0.0.1"); //server IP
+                //player.Connect(serverIP, 10000);
+
+                string serverHost = "shinkansen.proxy.rlwy.net"; 
+                int serverPort = 44721;
+                IPAddress[] addresses = Dns.GetHostAddresses(serverHost);
+                player.Connect(addresses[0], serverPort);
 
                 //sau khi đã kết nối thì lấy stream để thông báo cho server rằng người dùng đã kết nối
                 NetworkStream stream = player.GetStream();

@@ -4,10 +4,11 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY . .
-COPY gameuno-4db86-firebase-adminsdk-fbsvc-e9eb161dd1.json .
+COPY Resources ./Resources
 RUN dotnet publish -c Release -o /app
 
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app .
+COPY Resources ./Resources
 ENTRYPOINT ["dotnet", "Server.dll"]

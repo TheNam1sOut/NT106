@@ -116,20 +116,27 @@ public class Server
 
     public Server()
     {
-        string serviceAccountFileName = "gameuno-4db86-firebase-adminsdk-fbsvc-e9eb161dd1.json";
-        string currentDirectory = Directory.GetCurrentDirectory(); // Lấy thư mục hiện hành của ứng dụng
-        string serviceAccountPath = Path.Combine(currentDirectory, serviceAccountFileName);
-        // Kiểm tra xem tệp có tồn tại không
-        if (!File.Exists(serviceAccountPath))
+        //cho việc đọc file, nhưng ở đây nội dung file json sẽ được lưu trong biến .env
+        //string serviceAccountFileName = "gameuno-4db86-firebase-adminsdk-fbsvc-e9eb161dd1.json";
+        //string currentDirectory = Directory.GetCurrentDirectory(); // Lấy thư mục hiện hành của ứng dụng
+        //string serviceAccountPath = Path.Combine(currentDirectory, serviceAccountFileName);
+        //// Kiểm tra xem tệp có tồn tại không
+        //if (!File.Exists(serviceAccountPath))
+        //{
+        //    Console.WriteLine($"Lỗi: Không tìm thấy tệp khóa dịch vụ Firebase: {serviceAccountPath}");
+        //    Console.WriteLine("Vui lòng tải xuống tệp .json từ Firebase Console (Project settings -> Service accounts -> Generate new private key) và đặt vào cùng thư mục với ứng dụng server của bạn.");
+        //    return; // Dừng khởi tạo nếu không tìm thấy tệp
+        //}
+
+        var firebaseJson = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS_JSON");
+        if (string.IsNullOrEmpty(firebaseJson))
         {
-            Console.WriteLine($"Lỗi: Không tìm thấy tệp khóa dịch vụ Firebase: {serviceAccountPath}");
-            Console.WriteLine("Vui lòng tải xuống tệp .json từ Firebase Console (Project settings -> Service accounts -> Generate new private key) và đặt vào cùng thư mục với ứng dụng server của bạn.");
-            return; // Dừng khởi tạo nếu không tìm thấy tệp
+            throw new Exception("Firebase credentials not found in environment variables.");
         }
 
         try
         {
-            GoogleCredential credential = GoogleCredential.FromFile(serviceAccountPath);
+            GoogleCredential credential = GoogleCredential.FromJson(firebaseJson);
 
             // FirebaseApp.Create(new AppOptions() // No longer strictly needed for just Firestore, but good to keep if you might use other Firebase services.
             // {
@@ -1331,7 +1338,7 @@ public class Server
         // lấy bài        
         public void InitializeCardQueue()
         {
-            string cardsDirectory = "..\\..\\..\\Resources\\UNOCards\\Uno.txt";
+            string cardsDirectory = Path.Combine("Resources", "UNOCards", "Uno.txt");
 
             // Read data from file and enqueue
             Dataqueue = ReadFileAndEnqueue(cardsDirectory);
