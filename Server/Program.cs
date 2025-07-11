@@ -561,7 +561,7 @@ public class Server
                             Console.WriteLine(checkRoomInfo);
 
                             //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
-                            string sendPlayRequest = $"Room: {room.id}";
+                            string sendPlayRequest = $"Room: {room.id}\n";
                             byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                             acceptedClient.Send(sendClient);
                             string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
@@ -581,7 +581,7 @@ public class Server
                             Console.WriteLine(checkRoomInfo);
 
                             //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
-                            string sendPlayRequest = $"Room: {room.id}";
+                            string sendPlayRequest = $"Room: {room.id}\n";
                             byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                             acceptedClient.Send(sendClient);
                             string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
@@ -599,7 +599,7 @@ public class Server
                             Console.WriteLine(checkRoomInfo);
 
                             //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
-                            string sendPlayRequest = $"Room: {room.id}";
+                            string sendPlayRequest = $"Room: {room.id}\n";
                             byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                             acceptedClient.Send(sendClient);
                             string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
@@ -617,7 +617,7 @@ public class Server
                             Console.WriteLine(checkRoomInfo);
 
                             //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
-                            string sendPlayRequest = $"Room: {room.id}";
+                            string sendPlayRequest = $"Room: {room.id}\n";
                             byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                             acceptedClient.Send(sendClient);
                             string status = $"{room.countrd[1]},{room.countrd[2]},{room.countrd[3]},{room.countrd[4]}";
@@ -643,7 +643,7 @@ public class Server
                         Console.WriteLine(checkRoomInfo);
 
                         //cuối cùng, gửi id phòng đến người chơi để client có thể tiến hành thay đổi
-                        string sendPlayRequest = $"Room: {newRoom.id}";
+                        string sendPlayRequest = $"Room: {newRoom.id}\n";
                         byte[] sendClient = Encoding.UTF8.GetBytes(sendPlayRequest);
                         acceptedClient.Send(sendClient);
                     }

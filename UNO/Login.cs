@@ -3,6 +3,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace UNO
 {
@@ -25,59 +28,52 @@ namespace UNO
 
                 string serverHost = "shinkansen.proxy.rlwy.net"; 
                 int serverPort = 44721;
-                IPAddress[] addresses = Dns.GetHostAddresses(serverHost);
-                player.Connect(addresses[0], serverPort);
+                await NetworkManager.Instance.ConnectAsync(serverHost, serverPort);
 
-                //sau khi đã kết nối thì lấy stream để thông báo cho server rằng người dùng đã kết nối
-                NetworkStream stream = player.GetStream();
-                byte[] buffer = Encoding.UTF8.GetBytes($"Player: {textBox1.Text.Trim()}|{password.Text.Trim()}\n");
-                stream.Write(buffer, 0, buffer.Length);
-               
+                await NetworkManager.Instance.SendAsync($"Player: {textBox1.Text.Trim()}|{password.Text.Trim()}");
 
-
-
-                // Đọc phản hồi từ server
-                using var reader = new StreamReader(stream, Encoding.UTF8,leaveOpen:true);
-                string response = await reader.ReadLineAsync();
-                if (response.StartsWith("LoginOK: "))
+                // Handler for login response
+                void Handler(string response)
                 {
-                  
-                    // Mở form
-                    this.Hide();
-                    Menu Form1 = new Menu(textBox1.Text.Trim(), player);
-                    Form1.Show();
-                }
-
-                else
-                if (response.StartsWith("LoginFail: "))
-                {
-                    string reason = response.Substring("LoginFail: ".Length);
-                    string message = reason switch
+                    if (response.StartsWith("LoginOK: "))
                     {
-
-
-                        "WrongPassword" => "Mật khẩu không đúng.", // Giữ lại nếu bạn có cách khác để xử lí mật khẩu
-                        "AlreadyOnline" => "Tài khoản đang được sử dụng.",
-                        "UserAlreadyExists" => "Tài khoản đã tồn tại. Vui lòng đăng nhập hoặc dùng email/tên người dùng khác.",
-                        "RegistrationFailed" => "Đăng ký thất bại. Vui lòng thử lại.",
-                        "DatabaseSaveError" => "Lỗi lưu dữ liệu. Vui lòng thử lại.",
-                        "InvalidFormat" => "Lỗi định dạng yêu cầu.",
-                        "MissingCredentials" => "Vui lòng nhập đầy đủ tên người dùng và mật khẩu.",
-                        "InternalServerError" => "Lỗi server nội bộ. Vui lòng thử lại sau.",
-                        "MessageParseError" => "Lỗi xử lý tin nhắn từ server.",
-                        _ => "Đăng nhập thất bại không xác định."
-                    };
-
-                    MessageBox.Show(message, "Lỗi đăng nhập", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        NetworkManager.Instance.MessageReceived -= Handler;
+                        this.Invoke((Action)(() =>
+                        {
+                            this.Hide();
+                            Menu Form1 = new Menu(textBox1.Text.Trim());
+                            Form1.Show();
+                        }));
+                    }
+                    else if (response.StartsWith("LoginFail: "))
+                    {
+                        NetworkManager.Instance.MessageReceived -= Handler;
+                        string reason = response.Substring("LoginFail: ".Length);
+                        string message = reason switch
+                        {
+                            "WrongPassword" => "Mật khẩu không đúng.",
+                            "AlreadyOnline" => "Tài khoản đang được sử dụng.",
+                            "UserAlreadyExists" => "Tài khoản đã tồn tại. Vui lòng đăng nhập hoặc dùng email/tên người dùng khác.",
+                            "RegistrationFailed" => "Đăng ký thất bại. Vui lòng thử lại.",
+                            "DatabaseSaveError" => "Lỗi lưu dữ liệu. Vui lòng thử lại.",
+                            "InvalidFormat" => "Lỗi định dạng yêu cầu.",
+                            "MissingCredentials" => "Vui lòng nhập đầy đủ tên người dùng và mật khẩu.",
+                            "InternalServerError" => "Lỗi server nội bộ. Vui lòng thử lại sau.",
+                            "MessageParseError" => "Lỗi xử lý tin nhắn từ server.",
+                            _ => "Đăng nhập thất bại không xác định."
+                        };
+                        this.Invoke((Action)(() =>
+                        {
+                            MessageBox.Show(message, "Lỗi đăng nhập", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }));
+                    }
                 }
 
-                
-
-                //this.Close();
+                NetworkManager.Instance.MessageReceived += Handler;
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
-                MessageBox.Show("Error: " +  ex.Message);
+                MessageBox.Show("Error: " + ex.Message);
             }
         }
 

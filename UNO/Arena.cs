@@ -21,10 +21,9 @@ namespace UNO
 {
     public partial class Arena : Form
     {
-        private NetworkStream stream;
+        private bool isExiting = false;
         private string CardTop;
         public string playerName;
-        public TcpClient TcpClient;
         private Panel emojiPanel;
         private Timer blinkTimer;
         private bool isBlinking = false;
@@ -243,9 +242,7 @@ namespace UNO
         // Hàm xử lí yêu cầu rút thêm lá khi người dùng nhấn nút Draw
         private async Task DrawCards(int count)
         {
-            // Chỉ gửi 1 yêu cầu "DrawCard" mỗi lần
-            var msg = Encoding.UTF8.GetBytes("DrawCard\n");
-            await stream.WriteAsync(msg, 0, msg.Length);
+            await NetworkManager.Instance.SendAsync("DrawCard");
         }
 
 
@@ -253,7 +250,7 @@ namespace UNO
         //Hàm sắp xếp lại danh sách bài người chơi
         private void sortBtn_Click(object sender, EventArgs e) { }
 
-        public Arena(string playerName, TcpClient playerSocket, string roomName)
+        public Arena(string playerName, string roomName)
         {
             InitializeComponent();
             InitializeCustomComponents();
@@ -288,8 +285,6 @@ namespace UNO
 
 
             this.playerName = playerName;
-            this.TcpClient = playerSocket;
-            this.stream = TcpClient.GetStream();
             uiTimer = new System.Windows.Forms.Timer();
             uiTimer.Interval = 1000; // Cập nhật mỗi 1 giây (1000 miligiây)
             uiTimer.Tick += UiTimer_Tick; // Gán sự kiện Tick cho phương thức xử lý
@@ -413,7 +408,7 @@ namespace UNO
             PlayCard(cardName, pb);
             pendingCard = null;
         }
-        private void PlayCard(string cardName, PictureBox pb)
+        private async void PlayCard(string cardName, PictureBox pb)
         {
             char newColor = currentColor;
             string message;
@@ -429,15 +424,15 @@ namespace UNO
             if (cardName == "DD" || cardName == "DP")
             {
                 newColor = PromptForColor();
-                message = $"PlayCard: {cardName}|{newColor}\n";
+                message = $"PlayCard: {cardName}|{newColor}";
             }
             else if (cardName.EndsWith("P"))
             {
-                message = $"PlayCard: {cardName}|{currentColor}\n";
+                message = $"PlayCard: {cardName}|{currentColor}";
             }
             else
             {
-                message = $"PlayCard: {cardName}\n";
+                message = $"PlayCard: {cardName}";
             }
             Console.WriteLine($"[DEBUG] Pre-Remove hand: {string.Join(",", playerHand)}");
             lock (playerHandLock)
@@ -450,8 +445,7 @@ namespace UNO
             discardDeck.Add(cardName);
 
             // Gửi message
-            byte[] buffer = Encoding.UTF8.GetBytes(message);
-            stream.Write(buffer, 0, buffer.Length);
+            await NetworkManager.Instance.SendAsync(message);
             // Cập nhật trạng thái
             currentMiddleCard = cardName;
             currentColor = newColor;
@@ -690,12 +684,18 @@ namespace UNO
             }
         }
 
-        public async void Arena_Shown(object sender, EventArgs e)
+        public void Arena_Shown(object sender, EventArgs e)
         {
+            // Subscribe to messages
+            NetworkManager.Instance.MessageReceived += HandleServerMessage;
             try
             {
-                stream = TcpClient.GetStream();
-                await ReceiveMessagesfromsv();
+                // No longer need to get stream from TcpClient here
+                // NetworkManager.Instance.Connect(playerName, roomName); // Assuming NetworkManager handles connection
+                // For now, we'll just assume connection is established or will be handled by NetworkManager
+                // The actual connection logic should be in NetworkManager.Instance.Connect
+                // For this example, we'll just try to send a ready message to test
+                // await NetworkManager.Instance.SendAsync($"Ready: {Room.Text.Trim()}\n"); // This line is removed as per new_code
             }
             catch (Exception ex)
             {
@@ -843,491 +843,372 @@ namespace UNO
         {
 
         }
-        private async Task ReceiveMessagesfromsv()
+        private void HandleServerMessage(string msg)
         {
+            if (this.InvokeRequired)
+            {
+                this.Invoke((Action)(() => HandleServerMessage(msg)));
+                return;
+            }
             try
             {
-                using var reader = new StreamReader(stream, Encoding.UTF8);
-                while (true)
+                if (msg.StartsWith("isPlay: "))
                 {
-                    if (TcpClient == null || !TcpClient.Connected)
+                    var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
+                    var labelControls = new[] { lblTimer, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3, CurentColor  };
+                    var labels = new[] { Player1, Me, Player2,Player3 };
+                    var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
+                    var pictureBoxControls = new[]
                     {
-                        // marshal MessageBox onto UI thread
-                        if (this.InvokeRequired)
-                        {
-                            this.Invoke((Action)(() =>
-                                MessageBox.Show("Not connected to server. Please reconnect.")
-                            ));
-                        }
-                        else
-                        {
-                            MessageBox.Show("Not connected to server. Please reconnect.");
-                        }
-                        return;
+                        MiddlePictureBox,
+                        //pictureBox1,
+                        //pictureBox2,
+                        //AvatarPlayer,
+                        //Enemy,
+                        //setting,
+                        imojiButon,
+                        ClockIcon,
+                        //clock1,
+                        Card1,
+                        Card2,
+                        Card3,
+                        Card4,
+                        Card5,
+                        Card6,
+                    };
+                    string[] IdCards = msg.Split(':')[1].Trim().Split(',');
+                    // Show which players are ready (yellow) and which are not (white)
+                    for (int i = 0; i < IsPlayControls.Length; i++)
+                    {
+                        IsPlayControls[i].BackColor = IdCards[i].Trim() == "1"
+                            ? Color.Yellow
+                            : Color.White;
                     }
-
-                    string msg = await reader.ReadLineAsync(); // Chuyển đổi dữ liệu nhận được thành chuỗi
-                    if (msg.StartsWith("isPlay: "))
+                    // If all are ready, show the main game UI
+                    if (IdCards.All(id => id.Trim() == "1"))
                     {
-
-                        var IsPlayControls = new[] { isPlay1, isPlay2, isPlay3, isPlay4 };
-                        // lưu mảng toàn bộ các controls trong form arena
-
-                        var labelControls = new[] { lblTimer, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3, CurentColor  };
-                        var labels = new[] { Player1, Me, Player2,Player3 };
-
-                        var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
-                        var pictureBoxControls = new[]
-                        {
-                            MiddlePictureBox,
-                            //pictureBox1,
-                            //pictureBox2,
-                            //AvatarPlayer,
-                            //Enemy,
-                            //setting,
-                            imojiButon,
-                            ClockIcon,
-                            //clock1,
-                            Card1,
-                            Card2,
-                            Card3,
-                            Card4,
-                            Card5,
-                            Card6,
-                        };
-                        //foreach (var control in IsPlayControls)
-                        //{
-                        //    this.Invoke((Action)(() =>
-                        //    {
-                        //        control.BackColor = Color.White;
-                        //    }));
-                        //}
-                        string[] IdCards = msg.Split(':')[1].Trim().Split(','); // Lấy danh sách ID từ thông báo
-
-                        //for (int i = 0; i < IdCards.Length; i++)
-                        //{
-                        //    //MessageBox.Show(IdCards[i]);
-                        //    if (IdCards[i] == "1")
-                        //    {
-                        //        this.Invoke((Action)(() =>
-                        //        {
-                        //            IsPlayControls[i].BackColor = Color.Yellow;
-                        //        }));         
-                        //    }
-                        //}
-                        if (IdCards.All(id => id.Trim() == "1"))
-                        {
-
-                            // Fix for CS0119: 'Action' is a type, which is not valid in the given context
-                            // The issue is caused by an incorrect cast syntax. The correct syntax is to cast to `Action` without parentheses.
-
-                            this.Invoke((Action)(() =>
-                            {
-                                foreach (var control in IsPlayControls)
-                                {
-                                    control.Visible = false;
-                                }
-                                // Your code here
-                                // Example: Update UI elements
-                                foreach (var control in pictureBoxControls)
-                                {
-                                    control.Visible = true;
-                                }
-                                foreach (var control in buttonControls)
-                                {
-                                    control.Visible = true;
-                                }
-                                foreach (var control in labelControls)
-                                {
-                                    control.Visible = true;
-                                }
-                                foreach (var control in labels)
-                                {
-                                    control.Visible = true;
-                                }
-                                chatBox.Visible = true;
-                                chatInput.Visible = true;
-                            }));
-                        }
-                        else
-                        {
-                            this.Invoke((Action)(() =>
-                            {
-                                for (int i = 0; i < IsPlayControls.Length; i++)
-                                {
-                                    IsPlayControls[i].BackColor = IdCards[i].Trim() == "1"
-                                                                  ? Color.Yellow
-                                                                  : Color.White;
-                                }
-                            }));
-                        }
-                    }
-                    else if (msg.StartsWith("CardTop: "))
-                    {
-                        var p = msg.Substring(9).Split('|');
-                        currentMiddleCard = p[0].Trim();
-
-                        // Cập nhật màu: nếu có wild chọn màu thì p[1], ngược lại lấy màu từ chữ cái đầu
-                        currentColor = p.Length > 1 ? p[1][0] : currentMiddleCard[0];
-                        if (p.Length > 1 && p[1][0] != 'W')
-                        {
-                            currentColor = p[1][0];
-
-                            // Cập nhật background của label hiển thị màu
-                            CurentColor.BackColor = ColorFromChar(currentColor);
-                        }
-
-
-                        // **QUAN TRỌNG**: Cập nhật giá trị (value) mới để cho phép đánh cùng value
-                        //   Wild: DD (chọn màu), DP (+4) giữ nguyên tên
-                        //   Các lá khác: substring từ index 1
-                        currentValue = (currentMiddleCard == "DD" || currentMiddleCard == "DP")
-                                          ? currentMiddleCard
-                                          : currentMiddleCard.Substring(1);
-                        MiddlePictureBox.Image = imageCards[currentMiddleCard];
-                    }
-                    //handling draw card request
-                    else if (msg.StartsWith("InitialHand: "))
-                    {
-                        //get the draw amount
-                        string[] cards = msg.Substring("InitialHand: ".Length).Split(',');
-                        playerHand.Clear();
-                        foreach (string card in cards)
-                        {
-                            playerHand.Add(card.Trim());
-                        }
-                        this.Invoke((Action)(() => DisplayFirstSixCards()));
-                    }
-                    else if (msg.StartsWith("PendingDraw: "))
-                    {
-                        pendingDraw = int.Parse(msg.Substring("PendingDraw: ".Length).Trim());
-                        DrawButton.Enabled = isPlayerTurn;
-                    }
-                    else if (msg.StartsWith("Turn: "))
-                    {
-                        int id = int.Parse(msg.Substring(6));
-                        UpdatePlayerPanelColor(id);
-                        isPlayerTurn = (id == myPlayerId);
-                        DrawButton.Enabled = isPlayerTurn && pendingDraw == 0;
-
-                        if (isPlayerTurn)
-                            unoCalled = false; // reset mỗi lượt
-                    }
-                    else if (msg.StartsWith("Room: "))
-                    {
-                        string roomId = msg.Substring("Room: ".Length).Trim();
-                        // Lưu ID phòng (nếu cần)
-                    }
-                    else if (msg.StartsWith("YourId: "))
-                    {
-                        int myId = int.Parse(msg.Substring("YourId: ".Length).Trim());
-                        myPlayerId = myId;
-                        Console.WriteLine($"My Player ID: {myPlayerId}");
-                        // Lưu myId vào biến để sử dụng khi xử lý lượt
-                    }
-                    else if (msg.StartsWith("DrawCard: "))
-                    {
-                        string card = msg.Substring("DrawCard: ".Length).Trim();
-                        playerHand.Add(card);
-
-                        this.Invoke((Action)(() =>
-                        {
-                            UpdateSixCards();
-
-                            int count = playerHand.Count;
-                            var mePanel = this.Controls["Me"] as Panel;
-                            var lbl = mePanel?.Controls["NumberMe"] as Label;
-                            if (lbl != null)
-                                lbl.Text = $"Số lá: {count}";
-                            // highlight nếu cần
-                            if (IsValidMove(card))
-                            {
-                                var pb = FindPictureBoxForCard(card);
-                                if (pb != null)
-                                {
-                                    pb.BorderStyle = BorderStyle.Fixed3D;
-                                    pb.BackColor = Color.Yellow;
-                                }
-                            }
-                        }));
-                    }
-                    if (msg.StartsWith("CatchWindow: "))
-                    {
-                        targetId = int.Parse(msg.Substring("CatchWindow: ".Length).Trim());
-                        Console.WriteLine("[DEBUG] Nhận CatchWindow cho targetId: " + targetId + ", myId: " + myPlayerId);
-
-                        bool showCatch = (myPlayerId != targetId);
-                        this.Invoke((Action)(() =>
-                        {
-                            btnCatch.Visible = showCatch;
-                        }));
-
-                        Console.WriteLine("[DEBUG] Catch nút hiện lên: " + (showCatch ? "TRUE" : "FALSE"));
-                    }
-
-
-
-                    else if (msg.StartsWith("PlayerWin: "))
-                    {
-                        // lưu mảng toàn bộ các controls trong form arena
-                        var labelControls = new[] { lblTimer, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3, CurentColor };
-                        var labels = new[] { Player1, Me, Player2, Player3 };
-                        var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
-                        var pictureBoxControls = new[]
-                        {
-                            MiddlePictureBox,
-                            //AvatarPlayer,
-                            //Enemy,
-                            //setting,
-                            imojiButon,
-                            ClockIcon,
-                            //clock1,
-                            Card1,
-                            Card2,
-                            Card3,
-                            Card4,
-                            Card5,
-                            Card6,
-                        };
-                        
-                        string winner = msg.Substring("PlayerWin: ".Length).Trim();
-                        //this.Invoke((Action)(() =>
-                        //    MessageBox.Show($"{winner} đã chiến thắng", "Kết thúc trò chơi", MessageBoxButtons.OK)
-                        //));
-                        this.Invoke((Action)(() =>
-                        {
-                            foreach (var control in pictureBoxControls)
+                        // this.Invoke((Action)(() =>
+                        // {
+                            foreach (var control in IsPlayControls)
                             {
                                 control.Visible = false;
+                            }
+                            foreach (var control in pictureBoxControls)
+                            {
+                                control.Visible = true;
                             }
                             foreach (var control in buttonControls)
                             {
-                                control.Visible = false;
+                                control.Visible = true;
                             }
                             foreach (var control in labelControls)
                             {
-                                control.Visible = false;
+                                control.Visible = true;
                             }
                             foreach (var control in labels)
                             {
                                 control.Visible = true;
                             }
-                            chatBox.Visible = false;
-                            chatInput.Visible = false;
-
-                            //hiển thị thông tin liên quan đến kết quả
-                            resultLabel.Text = $"{winner} đã chiến thắng!";
-                            resultLabel.Visible = true;
-                            //scoreLabel.Visible = true;
-                            backBtn.Visible = true;
-
-
-                        }));
+                            chatBox.Visible = true;
+                            chatInput.Visible = true;
+                        //}));
                     }
-                    else if (msg.StartsWith("AutoDrawCount: "))
+                    else
                     {
-                        int count = int.Parse(msg.Substring("AutoDrawCount: ".Length).Trim());
-                        // Hiển thị thông báo (MessageBox hoặc label tuỳ bạn)
-                        this.Invoke((Action)(() =>
-                        {
-                            MessageBox.Show($"Bạn sẽ bị rút {count} lá do hiệu ứng +2/+4!", "Thông báo",
-                                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        }));
+                        // Not all ready: show waiting state
+                        foreach (var control in IsPlayControls)
+                            control.Visible = true;
+                        foreach (var control in pictureBoxControls)
+                            control.Visible = false;
+                        foreach (var control in buttonControls)
+                            control.Visible = false;
+                        foreach (var control in labelControls)
+                            control.Visible = false;
+                        foreach (var control in labels)
+                            control.Visible = false;
+                        chatBox.Visible = false;
+                        chatInput.Visible = false;
+                        // Optionally, show a waiting message
+                        
+                        backBtn.Visible = false;
                     }
-                    else if (msg.StartsWith("Chat: "))
-                    {
-                        string[] parts = msg.Substring(6).Trim().Split('|', 2);
-                        string playerName = parts[0];
-                        string msgContent = parts[1];
-                        this.Invoke((Action)(() =>
-                        {
-                            chatBox.AppendText($"{playerName}: {msgContent}\n");
-                        }));
-                    }
-                    else if (msg.StartsWith("PlayerDisconnected: "))
-                    {
-                        string disconnectedPlayer = msg.Substring("PlayerDisconnected: ".Length).Trim();
-                        this.Invoke((Action)(() =>
-                        {
-                            MessageBox.Show($"{disconnectedPlayer} has disconnected from the game.\nThe match has been ended.",
-                                           "Player Disconnected",
-                                           MessageBoxButtons.OK,
-                                           MessageBoxIcon.Information);
-
-                            // Return to menu
-                            this.Hide();
-                            Menu Form1 = new Menu(playerName, TcpClient);
-                            Form1.Show();
-                        }));
-                    }
-                    else if (msg.StartsWith("HideCatchWindow"))
-                    {
-                        // Ẩn luôn nút Catch trên tất cả client
-                        this.Invoke((Action)(() =>
-                        {
-                            btnCatch.Visible = false;
-                        }));
-                        Console.WriteLine("[DEBUG] Received HideCatchWindow, hiding Catch button on this client");
-                    }
-                    else if (msg.StartsWith("PlayerNames: "))
-                    {
-                        // Ví dụ msg = "PlayerNames: Alice|Bob|Charlie|David"
-                        var parts = msg.Substring("PlayerNames: ".Length).Split('|');
-                        if (parts.Length == 4)
-                        {
-                            // NameMe
-                            NameMe.Invoke((Action)(() => NameMe.Text = parts[myPlayerId - 1]));
-                            // 3 người còn lại, thứ tự là (myPlayerId % 4) + i
-                            for (int i = 1; i <= 3; i++)
-                            {
-                                int idx = (myPlayerId - 1 + i) % 4;
-                                // Lấy Panel chứa label
-                                var panel = this.Controls[$"Player{i}"] as Panel;
-                                var lbl = panel?.Controls[$"Name{i}"] as Label;
-
-                                lbl?.Invoke((Action)(() => lbl.Text = parts[idx]));
-                            }
-                        }
-                    }
-                    else if (msg.StartsWith("Remaining: "))
-                    {
-                        // Format của msg là "Remaining: playerId:count"
-                        var token = msg.Substring("Remaining: ".Length).Trim();
-                        var parts = token.Split(':');
-                        if (parts.Length == 2
-                            && int.TryParse(parts[0], out int pid)
-                            && int.TryParse(parts[1], out int count))
-                        {
-                            // TOÀN BỘ LOGIC CẬP NHẬT UI NÊN NẰM TRONG MỘT KHỐI INVOKE DUY NHẤT
-                            this.Invoke((Action)(() =>
-                            {
-                                if (pid == myPlayerId)
-                                {
-                                    var mePanel = this.Controls["Me"] as Panel;
-                                    if (mePanel != null) // KIỂM TRA NULL CHO PANEL
-                                    {
-                                        var numberMeLabel = mePanel.Controls["NumberMe"] as Label;
-                                        if (numberMeLabel != null) // KIỂM TRA NULL CHO LABEL BÊN TRONG PANEL
-                                        {
-                                            numberMeLabel.Text = $"Số lá: {count}";
-                                            numberMeLabel.Visible = true; // Đảm bảo hiển thị nếu ẩn
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine("[DEBUG] Label 'NumberMe' not found inside 'Me' panel.");
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("[DEBUG] Panel 'Me' not found on the form.");
-                                    }
-                                }
-                                else // Đối thủ
-                                {
-                                    int offset = (pid - myPlayerId + 4) % 4; // Tính offset đúng cho đối thủ
-                                                                             // Giả sử tên Panel của đối thủ là "Player1", "Player2", "Player3"
-                                    var panel = this.Controls[$"Player{offset}"] as Panel;
-                                    if (panel != null) // KIỂM TRA NULL CHO PANEL
-                                    {
-                                        var numberLabel = panel.Controls[$"Number{offset}"] as Label;
-                                        if (numberLabel != null) // KIỂM TRA NULL CHO LABEL BÊN TRONG PANEL
-                                        {
-                                            numberLabel.Text = $"Số lá: {count}";
-                                            numberLabel.Visible = true; // Đảm bảo hiển thị nếu ẩn
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine($"[DEBUG] Label 'Number{offset}' not found inside 'Player{offset}' panel.");
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"[DEBUG] Panel 'Player{offset}' not found on the form.");
-                                    }
-                                }
-                            }));
-                        }
-                    }
-                    else if (msg.StartsWith("TurnTimerStart:"))
-                    {
-                        string[] parts = msg.Substring("TurnTimerStart:".Length).Trim().Split('|');
-                        if (parts.Length == 2 && int.TryParse(parts[0], out int playerTurnId) && int.TryParse(parts[1], out int timeLimit))
-                        {
-                            currentTurnPlayerId = playerTurnId;
-                            remainingTimeSeconds = timeLimit; // Đặt lại thời gian còn lại
-
-                            // Cập nhật highlight người chơi đang đến lượt
-
-
-                            uiTimer.Stop(); // Dừng timer cũ để đặt lại
-
-                            // Cập nhật Label ngay lập tức với thời gian đầy đủ
-                            lblTimer.Text = $"{remainingTimeSeconds}s";
-                            lblTimer.ForeColor = SystemColors.ControlText; // Đặt lại màu chữ về mặc định
-
-                            if (playerTurnId == myPlayerId) // Nếu là lượt của chính client này
-                            {
-                                uiTimer.Start(); // Bắt đầu đếm ngược
-                                                 // Tùy chọn: Kích hoạt các nút hành động của tôi
-                                                 // btnPlayCard.Enabled = true;
-                                                 // btnDrawCard.Enabled = true;
-                            }
-                            else // Nếu không phải lượt của tôi
-                            {
-                                // Tùy chọn: Vô hiệu hóa các nút hành động của tôi
-                                // btnPlayCard.Enabled = false;
-                                // btnDrawCard.Enabled = false;
-                            }
-                        }
-                    }
-                    else if (msg.StartsWith("Timeout:")) // <--- Kiểm tra logic xử lý tin nhắn Timeout
-                    {
-                        string timeoutMessage = msg.Substring("Timeout:".Length).Trim();
-                        MessageBox.Show(timeoutMessage, "Hết thời gian!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        uiTimer.Stop(); // <--- Đảm bảo timer dừng
-                        lblTimer.Text = "Hết giờ!"; // <--- Cập nhật label
-                        lblTimer.ForeColor = Color.Red; // <--- Đổi màu
-                                                        // Vô hiệu hóa các nút hành động của tôi
-                    }
-
-
-
-
-
-
                 }
-
-
-                //update draw pile and discard pile
-                //else if (msg.StartsWith("Dataqueue: "))
-                //{
-                //    string[] parts = msg.Substring("Dataqueue: ".Length).Split('|');
-                //    if (parts.Length == 2)
-                //    {
-                //        string[] dataQueue = parts[0].Split(',');
-                //        string[] dataQueue1 = parts[1].Split(',');
-
-                //        deck.Clear();
-                //        foreach (string card in dataQueue)
-                //        {
-                //            deck.Add(card.Trim());
-                //        }
-                //        discardDeck.Clear();
-                //        foreach (string card in dataQueue1)
-                //        {
-                //            discardDeck.Add(card.Trim());
-                //        }
-                //    }
-                //}
-
-
+                else if (msg.StartsWith("CardTop: "))
+                {
+                    var p = msg.Substring(9).Split('|');
+                    currentMiddleCard = p[0].Trim();
+                    currentColor = p.Length > 1 ? p[1][0] : currentMiddleCard[0];
+                    if (p.Length > 1 && p[1][0] != 'W')
+                    {
+                        currentColor = p[1][0];
+                        CurentColor.BackColor = ColorFromChar(currentColor);
+                    }
+                    currentValue = (currentMiddleCard == "DD" || currentMiddleCard == "DP")
+                                          ? currentMiddleCard
+                                          : currentMiddleCard.Substring(1);
+                    MiddlePictureBox.Image = imageCards[currentMiddleCard];
+                }
+                else if (msg.StartsWith("InitialHand: "))
+                {
+                    string[] cards = msg.Substring("InitialHand: ".Length).Split(',');
+                    playerHand.Clear();
+                    foreach (string card in cards)
+                    {
+                        playerHand.Add(card.Trim());
+                    }
+                    //this.Invoke((Action)(() => DisplayFirstSixCards()));
+                    DisplayFirstSixCards();
+                }
+                else if (msg.StartsWith("PendingDraw: "))
+                {
+                    pendingDraw = int.Parse(msg.Substring("PendingDraw: ".Length).Trim());
+                    DrawButton.Enabled = isPlayerTurn;
+                }
+                else if (msg.StartsWith("Turn: "))
+                {
+                    int id = int.Parse(msg.Substring(6));
+                    UpdatePlayerPanelColor(id);
+                    isPlayerTurn = (id == myPlayerId);
+                    DrawButton.Enabled = isPlayerTurn && pendingDraw == 0;
+                    if (isPlayerTurn)
+                        unoCalled = false;
+                }
+                else if (msg.StartsWith("Room: "))
+                {
+                    string roomId = msg.Substring("Room: ".Length).Trim();
+                }
+                else if (msg.StartsWith("YourId: "))
+                {
+                    int myId = int.Parse(msg.Substring("YourId: ".Length).Trim());
+                    myPlayerId = myId;
+                    Console.WriteLine($"My Player ID: {myPlayerId}");
+                }
+                else if (msg.StartsWith("DrawCard: "))
+                {
+                    string card = msg.Substring("DrawCard: ".Length).Trim();
+                    playerHand.Add(card);
+                    // this.Invoke((Action)(() =>
+                    // {
+                        UpdateSixCards();
+                        int count = playerHand.Count;
+                        var mePanel = this.Controls["Me"] as Panel;
+                        var lbl = mePanel?.Controls["NumberMe"] as Label;
+                        if (lbl != null)
+                            lbl.Text = $"Số lá: {count}";
+                        if (IsValidMove(card))
+                        {
+                            var pb = FindPictureBoxForCard(card);
+                            if (pb != null)
+                            {
+                                pb.BorderStyle = BorderStyle.Fixed3D;
+                                pb.BackColor = Color.Yellow;
+                            }
+                        }
+                    //}));
+                }
+                else if (msg.StartsWith("CatchWindow: "))
+                {
+                    targetId = int.Parse(msg.Substring("CatchWindow: ".Length).Trim());
+                    Console.WriteLine("[DEBUG] Nhận CatchWindow cho targetId: " + targetId + ", myId: " + myPlayerId);
+                    bool showCatch = (myPlayerId != targetId);
+                    // this.Invoke((Action)(() =>
+                    // {
+                        btnCatch.Visible = showCatch;
+                    //}));
+                    Console.WriteLine("[DEBUG] Catch nút hiện lên: " + (showCatch ? "TRUE" : "FALSE"));
+                }
+                else if (msg.StartsWith("PlayerWin: "))
+                {
+                    var labelControls = new[] { lblTimer, NameMe, Name1, Name2, Name3, NumberMe, Number1, Number2, Number3, CurentColor };
+                    var labels = new[] { Player1, Me, Player2, Player3 };
+                    var buttonControls = new[] { DrawButton, PreviousButton, NextButton, SortButton, sendBtn };
+                    var pictureBoxControls = new[]
+                    {
+                        MiddlePictureBox,
+                        //AvatarPlayer,
+                        //Enemy,
+                        //setting,
+                        imojiButon,
+                        ClockIcon,
+                        //clock1,
+                        Card1,
+                        Card2,
+                        Card3,
+                        Card4,
+                        Card5,
+                        Card6,
+                    };
+                    string winner = msg.Substring("PlayerWin: ".Length).Trim();
+                    // this.Invoke((Action)(() =>
+                    // {
+                        foreach (var control in pictureBoxControls)
+                        {
+                            control.Visible = false;
+                        }
+                        foreach (var control in buttonControls)
+                        {
+                            control.Visible = false;
+                        }
+                        foreach (var control in labelControls)
+                        {
+                            control.Visible = false;
+                        }
+                        foreach (var control in labels)
+                        {
+                            control.Visible = false;
+                        }
+                        chatBox.Visible = false;
+                        chatInput.Visible = false;
+                        resultLabel.Text = $"{winner} đã chiến thắng!";
+                        resultLabel.Visible = true;
+                        backBtn.Visible = true;
+                    //}));
+                }
+                else if (msg.StartsWith("AutoDrawCount: "))
+                {
+                    int count = int.Parse(msg.Substring("AutoDrawCount: ".Length).Trim());
+                    // this.Invoke((Action)(() =>
+                    // {
+                        MessageBox.Show($"Bạn sẽ bị rút {count} lá do hiệu ứng +2/+4!", "Thông báo",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    //}));
+                }
+                else if (msg.StartsWith("Chat: "))
+                {
+                    string[] parts = msg.Substring(6).Trim().Split('|', 2);
+                    string playerName = parts[0];
+                    string msgContent = parts[1];
+                    // this.Invoke((Action)(() =>
+                    // {
+                        chatBox.AppendText($"{playerName}: {msgContent}\n");
+                    //}));
+                }
+                else if (msg.StartsWith("PlayerDisconnected: "))
+                {
+                    if (isExiting) return; // Prevent multiple triggers
+                    isExiting = true;
+                    NetworkManager.Instance.MessageReceived -= HandleServerMessage; // Unsubscribe!
+                    string disconnectedPlayer = msg.Substring("PlayerDisconnected: ".Length).Trim();
+                    // this.Invoke((Action)(() =>
+                    // {
+                        MessageBox.Show($"{disconnectedPlayer} has disconnected from the game.\nThe match has been ended.",
+                                       "Player Disconnected",
+                                       MessageBoxButtons.OK,
+                                       MessageBoxIcon.Information);
+                        this.Hide();
+                        Menu Form1 = new Menu(playerName);
+                        Form1.Show();
+                    //}));
+                }
+                else if (msg.StartsWith("HideCatchWindow"))
+                {
+                    // this.Invoke((Action)(() =>
+                    // {
+                        btnCatch.Visible = false;
+                    //}));
+                    Console.WriteLine("[DEBUG] Received HideCatchWindow, hiding Catch button on this client");
+                }
+                else if (msg.StartsWith("PlayerNames: "))
+                {
+                    var parts = msg.Substring("PlayerNames: ".Length).Split('|');
+                    if (parts.Length == 4)
+                    {
+                        NameMe.Invoke((Action)(() => NameMe.Text = parts[myPlayerId - 1]));
+                        for (int i = 1; i <= 3; i++)
+                        {
+                            int idx = (myPlayerId - 1 + i) % 4;
+                            var panel = this.Controls[$"Player{i}"] as Panel;
+                            var lbl = panel?.Controls[$"Name{i}"] as Label;
+                            lbl?.Invoke((Action)(() => lbl.Text = parts[idx]));
+                        }
+                    }
+                }
+                else if (msg.StartsWith("Remaining: "))
+                {
+                    var token = msg.Substring("Remaining: ".Length).Trim();
+                    var parts = token.Split(':');
+                    if (parts.Length == 2
+                        && int.TryParse(parts[0], out int pid)
+                        && int.TryParse(parts[1], out int count))
+                    {
+                        // this.Invoke((Action)(() =>
+                        // {
+                            if (pid == myPlayerId)
+                            {
+                                var mePanel = this.Controls["Me"] as Panel;
+                                if (mePanel != null)
+                                {
+                                    var numberMeLabel = mePanel.Controls["NumberMe"] as Label;
+                                    if (numberMeLabel != null)
+                                    {
+                                        numberMeLabel.Text = $"Số lá: {count}";
+                                        numberMeLabel.Visible = true;
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("[DEBUG] Label 'NumberMe' not found inside 'Me' panel.");
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("[DEBUG] Panel 'Me' not found on the form.");
+                                }
+                            }
+                            else
+                            {
+                                int offset = (pid - myPlayerId + 4) % 4;
+                                var panel = this.Controls[$"Player{offset}"] as Panel;
+                                if (panel != null)
+                                {
+                                    var numberLabel = panel.Controls[$"Number{offset}"] as Label;
+                                    if (numberLabel != null)
+                                    {
+                                        numberLabel.Text = $"Số lá: {count}";
+                                        numberLabel.Visible = true;
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"[DEBUG] Label 'Number{offset}' not found inside 'Player{offset}' panel.");
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[DEBUG] Panel 'Player{offset}' not found on the form.");
+                                }
+                            }
+                        //}));
+                    }
+                }
+                else if (msg.StartsWith("TurnTimerStart:"))
+                {
+                    string[] parts = msg.Substring("TurnTimerStart:".Length).Trim().Split('|');
+                    if (parts.Length == 2 && int.TryParse(parts[0], out int playerTurnId) && int.TryParse(parts[1], out int timeLimit))
+                    {
+                        currentTurnPlayerId = playerTurnId;
+                        remainingTimeSeconds = timeLimit;
+                        uiTimer.Stop();
+                        lblTimer.Text = $"{remainingTimeSeconds}s";
+                        lblTimer.ForeColor = SystemColors.ControlText;
+                        if (playerTurnId == myPlayerId)
+                        {
+                            uiTimer.Start();
+                        }
+                    }
+                }
+                else if (msg.StartsWith("Timeout:"))
+                {
+                    string timeoutMessage = msg.Substring("Timeout:".Length).Trim();
+                    MessageBox.Show(timeoutMessage, "Hết thời gian!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    uiTimer.Stop();
+                    lblTimer.Text = "Hết giờ!";
+                    lblTimer.ForeColor = Color.Red;
+                }
             }
             catch (Exception ex)
             {
-                // marshal error dialog
-                this.Invoke((Action)(() =>
-                    MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-                ));
+                //this.Invoke((Action)(() =>
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                //));
             }
         }
         private void UpdatePlayerPanelColor(int currentTurn)
@@ -1370,9 +1251,7 @@ namespace UNO
             try
             {
                 ReadyBtn.Visible = false;
-                byte[] buffer = Encoding.UTF8.GetBytes($"Ready: {Room.Text.Trim()}");
-                await stream.WriteAsync(buffer, 0, buffer.Length); // Gửi thông báo "Ready" đến server
-
+                await NetworkManager.Instance.SendAsync($"Ready: {Room.Text.Trim()}\n");
             }
             catch (Exception ex)
             {
@@ -1394,17 +1273,17 @@ namespace UNO
 
         }
 
-        private void btnUno_Click(object sender, EventArgs e)
+        private async void btnUno_Click(object sender, EventArgs e)
         {
-            stream.Write(Encoding.UTF8.GetBytes($"UnoCall: {myPlayerId}\n"));
+            await NetworkManager.Instance.SendAsync($"UnoCall: {myPlayerId}");
             unoCalled = true;
             btnUno.Visible = false;
             Console.WriteLine($"[DEBUG] Sent UnoCall for player {myPlayerId}");
         }
 
-        private void btnCatch_Click(object sender, EventArgs e)
+        private async void btnCatch_Click(object sender, EventArgs e)
         {
-            stream.Write(Encoding.UTF8.GetBytes($"CatchUno: {targetId}\n"));
+            await NetworkManager.Instance.SendAsync($"CatchUno: {targetId}");
             btnCatch.Visible = false;
             Console.WriteLine($"[DEBUG] Sent CatchUno for target {targetId}");
         }
@@ -1414,12 +1293,12 @@ namespace UNO
 
         }
 
-        private void sendBtn_Click(object sender, EventArgs e)
+        private async void sendBtn_Click(object sender, EventArgs e)
         {
             string chatMsg = chatInput.Text.Trim();
-            if (!chatMsg.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(chatMsg))
             {
-                stream.Write(Encoding.UTF8.GetBytes($"Chat: {chatMsg}\n"));
+                await NetworkManager.Instance.SendAsync($"Chat: {chatMsg}");
             }
             chatInput.Clear();
         }
@@ -1431,7 +1310,7 @@ namespace UNO
         private void backBtn_Click(object sender, EventArgs e)
         {
             this.Hide();
-            Menu Form1 = new Menu(playerName, TcpClient);
+            Menu Form1 = new Menu(playerName);
             Form1.Show();
         }
         private Color ColorFromChar(char c)
@@ -1451,18 +1330,13 @@ namespace UNO
             try
             {
                 Console.WriteLine("[DEBUG] Arena form is closing, handling disconnection...");
+                NetworkManager.Instance.MessageReceived -= HandleServerMessage; // Unsubscribe from messages
 
-                // Send disconnect message to server
-                if (stream != null && TcpClient != null && TcpClient.Connected)
-                {
-                    string disconnectMessage = $"Disconnect: {playerName}\n";
-                    byte[] buffer = Encoding.UTF8.GetBytes(disconnectMessage);
-                    await stream.WriteAsync(buffer, 0, buffer.Length);
+                // Optionally notify the server
+                await NetworkManager.Instance.SendAsync($"Disconnect: {playerName}");
 
-                    // Close the connection
-                    stream.Close();
-                    TcpClient.Close();
-                }
+                // Optionally close the connection if you want to fully disconnect the client
+                // NetworkManager.Instance.Disconnect();
 
                 Console.WriteLine("[DEBUG] Client disconnection handled successfully");
             }

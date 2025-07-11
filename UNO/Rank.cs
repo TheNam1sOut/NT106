@@ -9,26 +9,26 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
+using System.IO;
 
 namespace UNO
 {
     public partial class Rank : Form
     {
 
-        private string? username;
-        private TcpClient? tcpPlayer;
-        public Rank(string playerName, TcpClient playerSocket)
+        private string username;
+
+        public Rank(string playerName)
         {
             InitializeComponent();
             username = playerName;
-            tcpPlayer = playerSocket;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             this.Hide();
 
-            Menu menuForm = new Menu(username,tcpPlayer);
+            Menu menuForm = new Menu(username);
             menuForm.Show();
         }
 
@@ -38,34 +38,25 @@ namespace UNO
         }
         private async Task LoadRankingData()
         {
-            try
+            await NetworkManager.Instance.SendAsync("GetRanking");
+
+            void Handler(string message)
             {
-                // Gửi yêu cầu đến server để lấy dữ liệu bảng xếp hạng
-                NetworkStream stream = tcpPlayer.GetStream();
-                string requestMessage = "GetRanking\n"; // Tạo một tin nhắn yêu cầu mới
-                byte[] buffer = Encoding.UTF8.GetBytes(requestMessage);
-                await stream.WriteAsync(buffer, 0, buffer.Length);
-
-                // Đọc phản hồi từ server
-                // Server sẽ gửi về dữ liệu bảng xếp hạng, ví dụ: "Ranking: Player1|100,Player2|90,..."
-                byte[] responseBuffer = new byte[4096]; // Kích thước buffer lớn hơn để chứa nhiều dữ liệu
-                int bytesRead = await stream.ReadAsync(responseBuffer, 0, responseBuffer.Length);
-                string response = Encoding.UTF8.GetString(responseBuffer, 0, bytesRead).Trim();
-
-                if (response.StartsWith("Ranking:"))
+                if (message.StartsWith("Ranking:"))
                 {
-                    string rankingData = response.Substring("Ranking:".Length).Trim();
-                    DisplayRanking(rankingData);
+                    NetworkManager.Instance.MessageReceived -= Handler;
+                    string rankingData = message.Substring("Ranking:".Length).Trim();
+                    this.Invoke((Action)(() => DisplayRanking(rankingData)));
                 }
-                else
+                else if (message.StartsWith("Error:"))
                 {
-                    MessageBox.Show("Không thể tải dữ liệu bảng xếp hạng từ server.");
+                    NetworkManager.Instance.MessageReceived -= Handler;
+                    this.Invoke((Action)(() =>
+                        MessageBox.Show("Không thể tải dữ liệu bảng xếp hạng từ server.")
+                    ));
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Lỗi khi tải bảng xếp hạng: {ex.Message}");
-            }
+            NetworkManager.Instance.MessageReceived += Handler;
         }
         private void DisplayRanking(string rankingData)
         {
